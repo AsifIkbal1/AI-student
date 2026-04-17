@@ -1,0 +1,8 @@
+{
+  "name": "paid system",
+  "description": "An advanced AI-powered academic tutor, study companion, and productivity assistant for students.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

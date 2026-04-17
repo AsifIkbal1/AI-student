@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isNotBlocked() {
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isAuthenticated() && 
+        (isAdmin() || 
+         !exists(userPath) || 
+         get(userPath).data.get('isBlocked', false) == false);
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        request.auth.token.email == "mdasifikbal2050@gmail.com";
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'credits']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['user', 'admin'] &&
+             data.credits is number;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) && isNotBlocked() && (request.resource.data.role == resource.data.role || isAdmin())) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // System config
+    match /system/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      allow read: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isNotBlocked() && request.resource.data.uid == request.auth.uid;
+      allow update: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow delete: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Notes
+    match /notes/{noteId} {
+      allow read: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isNotBlocked() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Quizzes
+    match /quizzes/{quizId} {
+      allow read: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isNotBlocked() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Flashcards
+    match /flashcards/{deckId} {
+      allow read: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isNotBlocked() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isNotBlocked() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Usage Logs
+    match /usageLogs/{logId} {
+      allow read: if isAdmin() || (isNotBlocked() && resource.data.uid == request.auth.uid);
+      allow create: if isNotBlocked() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Login Logs
+    match /loginLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

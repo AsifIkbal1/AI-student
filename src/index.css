@@ -15,3 +15,44 @@
 .backface-hidden {
   backface-visibility: hidden;
 }
+
+/* Gradient Mesh & Glassmorphism */
+.bg-gradient-mesh {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 40% 20%, hsla(228,100%,74%,0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(189,100%,56%,0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(355,100%,93%,0.6) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsla(340,100%,76%,0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(22,100%,77%,0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, hsla(242,100%,70%,0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, hsla(343,100%,76%,0.4) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+.dark .bg-gradient-mesh {
+  background-color: #0f172a;
+  background-image: 
+    radial-gradient(at 40% 20%, hsla(228,100%,24%,0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(189,100%,16%,0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(355,100%,13%,0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsla(340,100%,26%,0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(22,100%,17%,0.4) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, hsla(242,100%,20%,0.4) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, hsla(343,100%,16%,0.4) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass-panel {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}

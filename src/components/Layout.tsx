@@ -43,12 +43,12 @@ const SidebarItem = ({ icon: Icon, label, path, active, theme, isCollapsed }: { 
     to={path}
     title={isCollapsed ? label : ""}
     className={cn(
-      "flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300",
+      "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 font-medium",
       active 
-        ? "bg-blue-600 text-white" 
+        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md shadow-blue-500/20" 
         : theme === 'dark' 
-          ? "text-gray-400 hover:bg-gray-800 hover:text-white" 
-          : "text-gray-600 hover:bg-gray-100",
+          ? "text-gray-400 hover:bg-gray-800/50 hover:text-white" 
+          : "text-gray-600 hover:bg-white/60",
       isCollapsed ? "justify-center px-2" : ""
     )}
   >
@@ -131,11 +131,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }
 
   return (
-    <div className={cn("flex h-screen", theme === 'dark' ? "bg-gray-950" : "bg-gray-50")}>
+    <div className={cn("flex h-screen", theme === 'dark' ? "bg-gray-900" : "bg-gradient-mesh")}>
       {/* Mobile Header */}
       <div className={cn(
         "md:hidden fixed top-0 left-0 right-0 h-16 border-b flex items-center justify-between px-4 z-40 transition-colors shadow-sm",
-        theme === 'dark' ? "bg-gray-900 border-gray-800 text-white" : "bg-white border-gray-200 text-gray-900"
+        theme === 'dark' ? "glass-panel border-gray-800 text-white" : "glass-panel border-white/60 text-gray-900"
       )}>
         <Link to="/" className="flex items-center gap-2">
           <div className="bg-blue-600 p-1.5 rounded-lg">
@@ -167,7 +167,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Sidebar */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 md:relative flex flex-col transition-all duration-300 ease-in-out border-r",
-        theme === 'dark' ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200",
+        theme === 'dark' ? "glass-panel border-gray-800/50" : "glass-panel border-white/60",
         isCollapsed ? "w-20" : "w-64",
         isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
@@ -316,8 +316,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Main Content */}
       <main className={cn(
-        "flex-1 overflow-y-auto transition-colors pt-16 md:pt-0",
-        theme === 'dark' ? "bg-gray-950" : "bg-gray-50/50"
+        "flex-1 overflow-y-auto transition-colors pt-16 md:pt-0 bg-transparent"
       )}>
 
         <div className="max-w-7xl mx-auto p-4 md:p-8">

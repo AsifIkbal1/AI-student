@@ -78,6 +78,7 @@ interface UserProfile {
     active: boolean;
   };
   isBlocked?: boolean;
+  isApproved?: boolean;
   createdAt: string;
 }
 
@@ -137,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 active: true,
               },
               isBlocked: false,
+              isApproved: false,
               createdAt: new Date().toISOString(),
             };
             setDoc(userDocRef, newProfile).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));

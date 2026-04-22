@@ -88,5 +88,16 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
       allow update, delete: if isAdmin();
     }
+
+    // Tokens
+    match /tokens/{tokenId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAuthenticated() && 
+                    !resource.data.isUsed && 
+                    request.resource.data.isUsed == true &&
+                    request.resource.data.usedBy == request.auth.uid;
+      allow delete: if isAdmin();
+    }
   }
 }

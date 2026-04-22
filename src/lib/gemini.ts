@@ -76,7 +76,7 @@ export function handleAIError(error: any) {
   }
   
   if (status === 500 || status === 503 || message.includes("server error")) {
-    return "Error: The AI server is experiencing temporary issues. Please try again in a few moments.";
+    return `Error: The AI server is experiencing issues. Details: ${message}`;
   }
   
   if (message.toLowerCase().includes("safety") || message.toLowerCase().includes("blocked") || message.toLowerCase().includes("candidate")) {

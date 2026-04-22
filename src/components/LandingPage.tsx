@@ -76,7 +76,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mt-12">
             {[
               { value: "10k+", label: "Active Students" },
-              { value: "50+", label: "AI Study Tools" },
+              { value: "15+", label: "AI Study Tools" },
               { value: "99%", label: "Satisfaction Rate" },
               { value: "24/7", label: "Instant Support" }
             ].map((stat, idx) => (

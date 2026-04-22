@@ -43,9 +43,10 @@ import { ZenPathAI } from "./components/ZenPathAI";
 import { AIDiagramGenerator } from "./components/AIDiagramGenerator";
 import { SmartResources } from "./components/SmartResources";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AccessPage } from "./components/AccessPage";
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
+const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: boolean }> = ({ children, requireAccess = true }) => {
+  const { user, profile, loading } = useAuth();
   const { theme } = useTheme();
 
   if (loading) {
@@ -61,6 +62,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (!user) {
     return <Navigate to="/" />;
+  }
+
+  if (requireAccess && profile) {
+    const hasAccess = profile.role === "admin" || profile.isApproved || (profile.subscription?.plan !== "free" && profile.subscription?.active);
+    if (!hasAccess) {
+      return <Navigate to="/access" />;
+    }
   }
 
   return <Layout>{children}</Layout>;
@@ -117,7 +125,8 @@ const App: React.FC = () => {
                 <Route path="/tracker" element={<ProtectedRoute><StudyPlannerTracker /></ProtectedRoute>} />
                 <Route path="/diagrams" element={<ProtectedRoute><AIDiagramGenerator /></ProtectedRoute>} />
                 <Route path="/smart-resources" element={<ProtectedRoute><SmartResources /></ProtectedRoute>} />
-                <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+                <Route path="/subscription" element={<ProtectedRoute requireAccess={false}><Subscription /></ProtectedRoute>} />
+                <Route path="/access" element={<ProtectedRoute requireAccess={false}><AccessPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>

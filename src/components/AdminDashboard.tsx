@@ -6,7 +6,9 @@ import {
   TrendingUp, 
   Search,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  ShieldCheck,
+  Clock
 } from "lucide-react";
 import { collection, query, getDocs, limit, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -21,6 +23,7 @@ import {
   AreaChart,
   Area
 } from "recharts";
+import { cn } from "../lib/utils";
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -67,23 +70,15 @@ export const AdminDashboard: React.FC = () => {
         const userMap: any = {};
         
         logs.forEach((log: any) => {
-          // Cost Estimation Logic
-          // GPT-4o-mini: $0.15/1M input, $0.60/1M output
-          // GPT-4o: $5.00/1M input, $15.00/1M output
-          // Gemini Pro: $3.50/1M input, $10.50/1M output
-          
           let cost = 0;
           const promptTokens = log.promptTokens || 0;
           const completionTokens = log.completionTokens || 0;
 
           if (log.tool === "summarizeVideo") {
-            // Gemini Pro
             cost = (promptTokens * 3.5 / 1000000) + (completionTokens * 10.5 / 1000000);
           } else if (["solveDoubt", "AICodeHelper-debug"].includes(log.tool)) {
-            // GPT-4o
             cost = (promptTokens * 5.0 / 1000000) + (completionTokens * 15.0 / 1000000);
           } else {
-            // Default GPT-4o-mini
             cost = (promptTokens * 0.15 / 1000000) + (completionTokens * 0.60 / 1000000);
           }
           
@@ -143,6 +138,16 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const toggleApproveUser = async (userId: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, "users", userId), {
+        isApproved: !currentStatus
+      });
+    } catch (error) {
+      console.error("Error toggling approval status:", error);
+    }
+  };
+
   const StatCard = ({ title, value, icon: Icon, trend, trendValue }: any) => (
     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
       <div className="flex justify-between items-start mb-4">
@@ -163,21 +168,19 @@ export const AdminDashboard: React.FC = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <header className="flex justify-between items-center mb-10">
+    <div className="max-w-7xl mx-auto p-4 lg:p-8">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-500">Monitor platform performance and user activity</p>
         </div>
-        <div className="flex gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search users..." 
-              className="bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        <div className="relative w-full md:w-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search users..." 
+            className="w-full md:w-64 bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
       </header>
 
@@ -185,27 +188,6 @@ export const AdminDashboard: React.FC = () => {
         <StatCard title="Total Users" value={stats.totalUsers} icon={Users} trend="up" trendValue="12%" />
         <StatCard title="Total API Credits" value={stats.totalApiCredits.toLocaleString()} icon={CreditCard} trend="up" trendValue="0%" />
         <StatCard title="Credits Remaining" value={stats.remainingApiCredits.toLocaleString()} icon={Activity} trend="down" trendValue="15%" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <StatCard title="Active Subs" value={stats.activeSubscriptions} icon={CreditCard} trend="up" trendValue="5%" />
-        <StatCard title="Credits Used" value={stats.totalCreditsUsed.toLocaleString()} icon={Activity} trend="down" trendValue="2%" />
-        <StatCard title="API Cost" value={`$${stats.apiCost}`} icon={TrendingUp} trend="up" trendValue="8%" />
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <div className="bg-emerald-50 p-3 rounded-xl">
-              <Activity className="text-emerald-600" size={24} />
-            </div>
-            <div className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase">
-              Live
-            </div>
-          </div>
-          <h3 className="text-sm font-semibold text-gray-500 mb-1">Current API</h3>
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-gray-900">OpenAI: GPT-4o-mini</p>
-            <p className="text-xs text-gray-500">Gemini: 1.5 Pro (Video)</p>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-8 mb-10">
@@ -247,27 +229,48 @@ export const AdminDashboard: React.FC = () => {
                     </td>
                     <td className="py-4 px-4 font-bold text-gray-700">{user.credits}</td>
                     <td className="py-4 px-4">
-                      <span className={cn(
-                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase",
-                        user.isBlocked ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
-                      )}>
-                        {user.isBlocked ? "Blocked" : "Active"}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-[10px] font-bold uppercase w-fit",
+                          user.isBlocked ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                        )}>
+                          {user.isBlocked ? "Blocked" : "Active"}
+                        </span>
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-[10px] font-bold uppercase w-fit",
+                          user.isApproved ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                        )}>
+                          {user.isApproved ? "Approved" : "Pending"}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      {user.role !== "admin" && (
+                      <div className="flex gap-2 justify-end">
                         <button
-                          onClick={() => toggleBlockUser(user.id, !!user.isBlocked)}
+                          onClick={() => toggleApproveUser(user.id, !!user.isApproved)}
                           className={cn(
-                            "px-4 py-1.5 rounded-xl text-xs font-bold transition-all",
-                            user.isBlocked 
-                              ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                              : "bg-red-600 text-white hover:bg-red-700"
+                            "px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1",
+                            user.isApproved 
+                              ? "bg-amber-100 text-amber-600 hover:bg-amber-200" 
+                              : "bg-emerald-600 text-white hover:bg-emerald-700"
                           )}
                         >
-                          {user.isBlocked ? "Unblock" : "Block"}
+                          {user.isApproved ? "Revoke Access" : "Approve Access"}
                         </button>
-                      )}
+                        {user.role !== "admin" && (
+                          <button
+                            onClick={() => toggleBlockUser(user.id, !!user.isBlocked)}
+                            className={cn(
+                              "px-4 py-1.5 rounded-xl text-xs font-bold transition-all",
+                              user.isBlocked 
+                                ? "bg-emerald-50 text-emerald-600" 
+                                : "bg-red-600 text-white hover:bg-red-700"
+                            )}
+                          >
+                            {user.isBlocked ? "Unblock" : "Block"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -277,114 +280,34 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">User Activity & Token Usage</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
-                  <th className="pb-4 px-4">User ID</th>
-                  <th className="pb-4 px-4">Total Tokens</th>
-                  <th className="pb-4 px-4">Tools Used</th>
-                  <th className="pb-4 px-4">Last Activity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {userUsage.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-10 text-center text-gray-400 italic">No user activity tracked yet.</td>
-                  </tr>
-                ) : (
-                  userUsage.map((user) => (
-                    <tr key={user.uid} className="text-sm hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-mono text-xs text-gray-600">{user.uid.slice(0, 8)}...</td>
-                      <td className="py-4 px-4 font-bold text-blue-600">{user.totalTokens.toLocaleString()}</td>
-                      <td className="py-4 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(user.tools).map(([tool, count]: any) => (
-                            <span key={tool} className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                              {tool} ({count})
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-500 text-xs">
-                        {user.lastSeen ? new Date(user.lastSeen.seconds * 1000).toLocaleString() : "N/A"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
-          <div className="space-y-6">
-            {recentLogs.length === 0 ? (
-              <p className="text-gray-400 text-center italic py-10">No recent activity logs.</p>
-            ) : (
-              recentLogs.map((log) => (
-                <div key={log.id} className="flex items-center gap-4">
-                  <div className="bg-gray-50 p-2 rounded-lg">
-                    <Activity size={18} className="text-gray-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{log.tool}</p>
-                    <p className="text-xs text-gray-500">
-                      {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : "Pending..."}
-                    </p>
-                  </div>
-                  <span className="text-xs font-bold text-blue-600">{log.totalTokens || 0} tokens</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Login History</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-6 text-center lg:text-left">Login History</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
                   <th className="pb-4 px-4">Email</th>
                   <th className="pb-4 px-4">Time</th>
-                  <th className="pb-4 px-4">User Agent</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {loginLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-10 text-center text-gray-400 italic">No login history available.</td>
+                {loginLogs.map((log) => (
+                  <tr key={log.id} className="text-sm hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 font-medium text-gray-900">{log.email}</td>
+                    <td className="py-4 px-4 text-gray-500 text-xs">
+                      {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : "N/A"}
+                    </td>
                   </tr>
-                ) : (
-                  loginLogs.map((log) => (
-                    <tr key={log.id} className="text-sm hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-900">{log.email}</td>
-                      <td className="py-4 px-4 text-gray-500 text-xs">
-                        {log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : "N/A"}
-                      </td>
-                      <td className="py-4 px-4 text-gray-400 text-[10px] truncate max-w-[200px]" title={log.userAgent}>
-                        {log.userAgent}
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-bold text-gray-900 mb-6">Usage Analytics</h3>
-          <div className="h-80">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -408,5 +331,3 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
-
-import { cn } from "../lib/utils";

@@ -105,6 +105,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: CreditCard, label: t("subscription"), path: "/subscription" },
   ];
 
+  const specializedItems = [
+    { icon: Brain, label: t("neurotest_ai"), path: "/neurotest-ai" },
+  ];
+
   const adminItems = [
     { icon: Settings, label: t("admin_dashboard"), path: "/admin" },
   ];
@@ -243,6 +247,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         <nav className="flex-1 px-4 pt-4 space-y-1 overflow-y-auto no-scrollbar">
           {menuItems.map((item) => (
+            <SidebarItem
+              key={item.path}
+              icon={item.icon}
+              label={item.label}
+              path={item.path}
+              active={location.pathname === item.path}
+              theme={theme}
+              isCollapsed={isCollapsed}
+            />
+          ))}
+
+          {!isCollapsed && specializedItems.length > 0 && (
+            <div className="pt-4 pb-2">
+              <div className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 opacity-50">
+                Performance AI
+              </div>
+            </div>
+          )}
+          
+          {specializedItems.map((item) => (
             <SidebarItem
               key={item.path}
               icon={item.icon}

@@ -22,6 +22,7 @@ export const bn = {
   admin_dashboard: "এডমিন ড্যাশবোর্ড",
   admin_only: "এডমিন অনলি",
   sign_out: "সাইন আউট",
+  neurotest_ai: "নিউরোটেস্ট এআই",
   
   // Dashboard
   welcome_back: "স্বাগতম",

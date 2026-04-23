@@ -413,6 +413,80 @@ async function startServer() {
 
 
 
+  // --- NeuroTest AI Routes ---
+  app.post("/api/neurotest/save-result", async (req, res) => {
+    const { testType, score, unit, accuracy, userId: customUserId } = req.body;
+    const userId = customUserId || "guest";
+
+    if (!db) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      await db.collection("neurotest_results").add({
+        userId,
+        testType,
+        score,
+        unit,
+        accuracy: accuracy || null,
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error saving NeuroTest result:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/neurotest/get-results", async (req, res) => {
+    const { userId } = req.query;
+    if (!db) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const snapshot = await db.collection("neurotest_results")
+        .where("userId", "==", userId)
+        .orderBy("timestamp", "desc")
+        .limit(50)
+        .get();
+
+      const results = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate().toISOString()
+      }));
+
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching NeuroTest results:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/neurotest/ai-analysis", async (req, res) => {
+    const { results } = req.body;
+    let geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    if (geminiKey.startsWith('"') && geminiKey.endsWith('"')) geminiKey = geminiKey.slice(1, -1);
+    if (!geminiKey) return res.status(401).json({ error: "Gemini API Key missing" });
+
+    try {
+      const genAI = getGemini();
+      const model = genAI.getGenerativeModel({ model: MODELS.GEMINI });
+      const prompt = `
+        Analyze the following cognitive test results for a user and provide insights.
+        Results: ${JSON.stringify(results)}
+        Provide a structured response with:
+        1. Overall cognitive profile summary.
+        2. Strengths (identify which tests had elite/good scores).
+        3. Weaknesses (identify areas for improvement).
+        4. Specific recommendations for study habits or cognitive training.
+        Keep the tone professional, encouraging, and scientific.
+      `;
+      const response = await model.generateContent(prompt);
+      res.json({ analysis: response.response.text() });
+    } catch (error: any) {
+      console.error("NeuroTest AI Analysis Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

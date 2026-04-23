@@ -22,6 +22,7 @@ export const en = {
   admin_dashboard: "Admin Dashboard",
   admin_only: "Admin Only",
   sign_out: "Sign Out",
+  neurotest_ai: "NeuroTest AI",
   
   // Dashboard
   welcome_back: "Welcome back",

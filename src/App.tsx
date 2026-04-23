@@ -6,6 +6,7 @@ import { LanguageProvider } from "./components/LanguageContext";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./components/Dashboard";
 import { AITutor } from "./components/AITutor";
+import { NeuroTest } from "./components/NeuroTest/NeuroTest";
 import { LandingPage } from "./components/LandingPage";
 import { Loader2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -107,6 +108,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/neurotest-ai" element={<ProtectedRoute requireAccess={false}><NeuroTest /></ProtectedRoute>} />
                 <Route path="/zenpath" element={<ProtectedRoute><ZenPathAI /></ProtectedRoute>} />
                 <Route path="/tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
                 {/* Placeholder routes for other features */}

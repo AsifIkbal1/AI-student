@@ -29,11 +29,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  Cpu
 } from "lucide-react";
+
 import { useAuth } from "./AuthContext";
 import { useTheme } from "./ThemeContext";
 import { useLanguage } from "./LanguageContext";
+import { CortexNotificationListener } from "./CortexStudio/CortexNotificationListener";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -102,7 +105,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: CheckSquare, label: t("tracker"), path: "/tracker" },
     { icon: Network, label: t("diagrams"), path: "/diagrams" },
     { icon: Library, label: t("smart_resources"), path: "/smart-resources" },
+    { icon: Cpu, label: t("cortex_studio"), path: "/cortex-studio" },
     { icon: CreditCard, label: t("subscription"), path: "/subscription" },
+  ];
+
+  const specializedItems = [
+    { icon: Brain, label: t("neurotest_ai"), path: "/neurotest-ai" },
+    { icon: FileText, label: t("digital_notes"), path: "/digital-notes" },
   ];
 
   const adminItems = [
@@ -254,6 +263,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             />
           ))}
 
+          {!isCollapsed && specializedItems.length > 0 && (
+            <div className="pt-4 pb-2">
+              <div className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 opacity-50">
+                Performance AI
+              </div>
+            </div>
+          )}
+          
+          {specializedItems.map((item) => (
+            <SidebarItem
+              key={item.path}
+              icon={item.icon}
+              label={item.label}
+              path={item.path}
+              active={location.pathname === item.path}
+              theme={theme}
+              isCollapsed={isCollapsed}
+            />
+          ))}
+
           {profile?.role === "admin" && (
             <>
               <div className={cn(
@@ -316,13 +345,38 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Main Content */}
       <main className={cn(
-        "flex-1 overflow-y-auto transition-colors pt-16 md:pt-0 bg-transparent"
+        "flex-1 overflow-y-auto transition-colors pt-16 md:pt-0 bg-transparent flex flex-col"
       )}>
 
         <div className="max-w-7xl mx-auto p-4 md:p-8">
           {children}
         </div>
+
+        {/* Global Footer for Logged-in Users */}
+        <footer className={cn(
+          "mt-auto py-8 border-t px-8",
+          theme === 'dark' ? "border-gray-800 text-gray-400" : "border-gray-200 text-gray-500"
+        )}>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-2 opacity-70">
+              <div className="bg-blue-600 p-1.5 rounded-lg">
+                <GraduationCap className="text-white" size={16} />
+              </div>
+              <span className="font-bold text-sm">AI Students</span>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-6 text-xs font-bold uppercase tracking-wider">
+              <Link to="/policy/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
+              <Link to="/policy/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
+              <Link to="/policy/refund" className="hover:text-blue-600 transition-colors">Refund</Link>
+              <Link to="/policy/contact" className="hover:text-blue-600 transition-colors">Contact Us</Link>
+            </div>
+
+            <p className="text-xs font-medium">© 2026 AI Students</p>
+          </div>
+        </footer>
       </main>
+      <CortexNotificationListener />
     </div>
   );
 };

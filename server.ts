@@ -9,6 +9,8 @@ import Stripe from "stripe";
 import SSLCommerzPayment from "sslcommerz-lts";
 import admin from "firebase-admin";
 import firebaseConfig from "./firebase-applet-config.json" assert { type: "json" };
+import cron from "node-cron";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 
@@ -28,6 +30,12 @@ if (serviceAccount) {
   console.warn("FIREBASE_SERVICE_ACCOUNT missing. Subscription updates will fail.");
 }
 const db = admin.apps.length > 0 ? admin.firestore() : null;
+
+// Cortex Collections (References)
+const cortexAgents = db?.collection("cortex_agents");
+const cortexTasks = db?.collection("cortex_tasks");
+const cortexChats = db?.collection("cortex_chats");
+const cortexSettings = db?.collection("cortex_settings");
 
 const stripeSecret = (process.env.STRIPE_SECRET_KEY || "").trim();
 const stripe = stripeSecret ? new Stripe(stripeSecret) : null;
@@ -130,7 +138,29 @@ async function startServer() {
       const response = await openai.chat.completions.create({
         model: MODELS.GPT3,
         messages: [
-          { role: "system", content: "You are 'AI Students Assistant' — a formal yet friendly academic tutor." },
+          { role: "system", content: `You are an advanced AI assistant designed to provide highly accurate, reliable, and well-structured answers for students.
+
+Your task is to respond to the user's query with:
+1. Clear, concise, and well-organized explanations
+2. Factually correct and up-to-date information
+3. References or sources (if applicable)
+4. Step-by-step breakdowns (when needed)
+5. Examples or real-world use cases (if helpful)
+
+Rules:
+- Always prioritize accuracy over speed
+- If unsure, clearly mention uncertainty instead of guessing
+- Avoid vague or generic answers
+- Use bullet points, headings, and formatting for clarity
+- When possible, include source names (e.g., research papers, official docs) and data points
+- For technical questions: Provide code and explain logic simply
+- For comparison: Use tables or structured comparison
+- For opinion-based questions: Provide balanced perspectives
+
+Tone: Professional but easy to understand, avoiding unnecessary complexity.
+Output Format: Title, Explanation, Key Points, References.
+
+Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert Consultant.` },
           ...(history || []).map((h: any) => ({ 
             role: h.role === "user" ? "user" : "assistant", 
             content: h.content || (h.parts ? h.parts[0].text : "")
@@ -412,6 +442,370 @@ async function startServer() {
   });
 
 
+
+  // --- NeuroTest AI Routes ---
+  app.post("/api/neurotest/save-result", async (req, res) => {
+    const { testType, score, unit, accuracy, userId: customUserId } = req.body;
+    const userId = customUserId || "guest";
+
+    if (!db) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      await db.collection("neurotest_results").add({
+        userId,
+        testType,
+        score,
+        unit,
+        accuracy: accuracy || null,
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error saving NeuroTest result:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/neurotest/get-results", async (req, res) => {
+    const { userId } = req.query;
+    if (!db) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const snapshot = await db.collection("neurotest_results")
+        .where("userId", "==", userId)
+        .orderBy("timestamp", "desc")
+        .limit(50)
+        .get();
+
+      const results = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate().toISOString()
+      }));
+
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error fetching NeuroTest results:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/neurotest/ai-analysis", async (req, res) => {
+    const { results } = req.body;
+    let geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    if (geminiKey.startsWith('"') && geminiKey.endsWith('"')) geminiKey = geminiKey.slice(1, -1);
+    if (!geminiKey) return res.status(401).json({ error: "Gemini API Key missing" });
+
+    try {
+      const genAI = getGemini();
+      const model = genAI.getGenerativeModel({ model: MODELS.GEMINI });
+      const prompt = `
+        Analyze the following cognitive test results for a user and provide insights.
+        Results: ${JSON.stringify(results)}
+        Provide a structured response with:
+        1. Overall cognitive profile summary.
+        2. Strengths (identify which tests had elite/good scores).
+        3. Weaknesses (identify areas for improvement).
+        4. Specific recommendations for study habits or cognitive training.
+        Keep the tone professional, encouraging, and scientific.
+      `;
+      const response = await model.generateContent(prompt);
+      res.json({ analysis: response.response.text() });
+    } catch (error: any) {
+      console.error("NeuroTest AI Analysis Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Cortex Studio AI Routes ---
+
+  // Agents CRUD
+  app.get("/api/cortex/agents", async (req, res) => {
+    const { userId } = req.query;
+    if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const snapshot = await cortexAgents.where("userId", "==", userId).get();
+      const agents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      res.json(agents);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/cortex/agents", async (req, res) => {
+    const { userId, name, role, instructions, tools, memoryEnabled } = req.body;
+    if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const docRef = await cortexAgents.add({
+        userId,
+        name,
+        role,
+        instructions,
+        tools: tools || [],
+        memoryEnabled: memoryEnabled || false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      res.json({ id: docRef.id });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/cortex/agents/:id", async (req, res) => {
+    const { id } = req.params;
+    if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      await cortexAgents.doc(id).delete();
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Settings CRUD
+  app.get("/api/cortex/settings", async (req, res) => {
+    const { userId } = req.query;
+    if (!cortexSettings) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const doc = await cortexSettings.doc(userId as string).get();
+      res.json(doc.exists ? doc.data() : {});
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/cortex/settings", async (req, res) => {
+    const { userId, smtpHost, smtpPort, smtpUser, smtpPass } = req.body;
+    if (!cortexSettings) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      await cortexSettings.doc(userId).set({
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPass,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Helper for Email Tool
+  const sendEmail = async (userId: string, to: string, subject: string, body: string) => {
+    if (!cortexSettings) throw new Error("Settings DB not available");
+    const settingsDoc = await cortexSettings.doc(userId).get();
+    if (!settingsDoc.exists) throw new Error("Email settings not configured. Please go to Cortex Studio Settings.");
+    
+    const { smtpHost, smtpPort, smtpUser, smtpPass } = settingsDoc.data()!;
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: parseInt(smtpPort),
+      secure: smtpPort === "465",
+      auth: { user: smtpUser, pass: smtpPass }
+    });
+
+    await transporter.sendMail({
+      from: `Cortex AI Agent <${smtpUser}>`,
+      to,
+      subject,
+      text: body,
+      html: body.replace(/\n/g, '<br>')
+    });
+    return `Email successfully sent to ${to}`;
+  };
+
+  // Helper for Notification Tool
+  const sendNotification = async (userId: string, title: string, message: string) => {
+    if (!db) throw new Error("Database not available");
+    await db.collection("cortex_notifications").add({
+      userId,
+      title,
+      message,
+      read: false,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return `Notification sent to user: ${title}`;
+  };
+
+  // Update Streaming Chat with Notification Tool Support
+  app.post("/api/cortex/chat/stream", async (req, res) => {
+    const { userId, agentId, prompt, history } = req.body;
+    if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const agentDoc = await cortexAgents.doc(agentId).get();
+      if (!agentDoc.exists) return res.status(404).json({ error: "Agent not found" });
+      const agentData = agentDoc.data()!;
+
+      const openai = getOpenAI();
+      const messages = [
+        { role: "system", content: `Role: ${agentData.role}\nInstructions: ${agentData.instructions}\nGoal: ${agentData.goal || "Be a helpful AI assistant."}\n\nYou have access to tools. If the user asks to send an email, use send_email. If the user asks for a reminder or notification, use send_notification.` },
+        ...(history || []).map((h: any) => ({ role: h.role, content: h.content })),
+        { role: "user", content: prompt }
+      ];
+
+      const tools: any[] = [
+        {
+          type: "function",
+          function: {
+            name: "send_email",
+            description: "Send an email to a recipient.",
+            parameters: {
+              type: "object",
+              properties: {
+                to: { type: "string", description: "Recipient email address" },
+                subject: { type: "string", description: "Email subject" },
+                body: { type: "string", description: "Email body content" }
+              },
+              required: ["to", "subject", "body"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "send_notification",
+            description: "Send a real-time browser notification/reminder to the user.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string", description: "Notification title" },
+                message: { type: "string", description: "Notification message" }
+              },
+              required: ["title", "message"]
+            }
+          }
+        }
+      ];
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const response = await openai.chat.completions.create({
+        model: MODELS.GPT3,
+        messages: messages as any,
+        tools: tools, // Always provide tools for Cortex Agents
+        stream: true,
+      });
+
+      let toolCalls: any[] = [];
+      for await (const chunk of response) {
+        const delta = chunk.choices[0]?.delta;
+        
+        if (delta?.content) {
+          res.write(`data: ${JSON.stringify({ content: delta.content })}\n\n`);
+        }
+
+        if (delta?.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            if (!toolCalls[tc.index]) toolCalls[tc.index] = { id: tc.id, name: "", args: "" };
+            if (tc.function?.name) toolCalls[tc.index].name += tc.function.name;
+            if (tc.function?.arguments) toolCalls[tc.index].args += tc.function.arguments;
+          }
+        }
+      }
+
+      // If tools were called, execute them
+      for (const tc of toolCalls) {
+        if (!tc) continue;
+        if (tc.name === "send_email") {
+          try {
+            const args = JSON.parse(tc.args);
+            res.write(`data: ${JSON.stringify({ content: `\n\n*System: Sending email to ${args.to}...*\n` })}\n\n`);
+            const result = await sendEmail(userId, args.to, args.subject, args.body);
+            res.write(`data: ${JSON.stringify({ content: `\n\n✅ ${result}\n` })}\n\n`);
+          } catch (e: any) {
+            res.write(`data: ${JSON.stringify({ content: `\n\n❌ Error: ${e.message}\n` })}\n\n`);
+          }
+        } else if (tc.name === "send_notification") {
+          try {
+            const args = JSON.parse(tc.args);
+            res.write(`data: ${JSON.stringify({ content: `\n\n*System: Triggering notification...*\n` })}\n\n`);
+            const result = await sendNotification(userId, args.title, args.message);
+            res.write(`data: ${JSON.stringify({ content: `\n\n✅ ${result}\n` })}\n\n`);
+          } catch (e: any) {
+            res.write(`data: ${JSON.stringify({ content: `\n\n❌ Notification Error: ${e.message}\n` })}\n\n`);
+          }
+        }
+      }
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error: any) {
+      console.error("Cortex Chat Error:", error);
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.end();
+    }
+  });
+
+  // Tasks CRUD
+
+  // Tasks CRUD
+  app.get("/api/cortex/tasks", async (req, res) => {
+    const { userId } = req.query;
+    if (!cortexTasks) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const snapshot = await cortexTasks.where("userId", "==", userId).get();
+      const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/cortex/tasks", async (req, res) => {
+    const { userId, agentId, title, schedule, action } = req.body;
+    if (!cortexTasks) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      const docRef = await cortexTasks.add({
+        userId,
+        agentId,
+        title,
+        schedule, // cron format e.g. "0 0 * * *"
+        action,
+        status: "active",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      res.json({ id: docRef.id });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/cortex/tasks/:id", async (req, res) => {
+    const { id } = req.params;
+    if (!cortexTasks) return res.status(500).json({ error: "Database not initialized" });
+
+    try {
+      await cortexTasks.doc(id).delete();
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Task Automation Engine (Cron)
+  cron.schedule("* * * * *", async () => {
+    if (!cortexTasks || !cortexAgents) return;
+
+    try {
+      const now = new Date();
+      // In a real app, you'd check schedule match here.
+      // For simplicity, we'll log that the scheduler is active.
+      // console.log("Cortex Cron: Checking tasks...");
+    } catch (error) {
+      console.error("Cron Error:", error);
+    }
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

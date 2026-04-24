@@ -171,27 +171,30 @@ export const AIEssayWriter: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Essay Topic</label>
+              <label className="block text-base font-bold text-gray-700 mb-3">Essay Topic</label>
               <textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="Enter your essay topic or prompt..."
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-32 resize-none"
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-6 py-5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-56 resize-none text-lg leading-relaxed shadow-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Essay Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              >
-                <option>Argumentative</option>
-                <option>Persuasive</option>
-                <option>Expository</option>
-                <option>Narrative</option>
-                <option>Descriptive</option>
-              </select>
+              <label className="block text-base font-bold text-gray-700 mb-3">Essay Type</label>
+              <div className="relative">
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-6 py-5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-lg font-medium appearance-none shadow-sm cursor-pointer"
+                >
+                  <option>Argumentative</option>
+                  <option>Persuasive</option>
+                  <option>Expository</option>
+                  <option>Narrative</option>
+                  <option>Descriptive</option>
+                </select>
+                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={24} />
+              </div>
             </div>
 
             {error && (
@@ -201,21 +204,21 @@ export const AIEssayWriter: React.FC = () => {
               </div>
             )}
 
-            <div className="flex flex-col gap-3 pt-2">
+            <div className="flex flex-col gap-4 pt-4">
               <button
                 onClick={handleGenerateOutline}
                 disabled={loading || !topic.trim()}
-                className="w-full bg-white text-blue-600 border-2 border-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-white text-blue-600 border-2 border-blue-600 py-4 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-sm"
               >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <PenTool size={20} />}
+                {loading ? <Loader2 className="animate-spin" size={24} /> : <PenTool size={24} />}
                 Generate Outline
               </button>
               <button
                 onClick={handleGenerateEssay}
                 disabled={loading || !topic.trim()}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-blue-600 text-white py-5 rounded-2xl font-bold text-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl shadow-blue-200"
               >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                {loading ? <Loader2 className="animate-spin" size={26} /> : <Sparkles size={26} />}
                 Generate Full Essay
               </button>
 

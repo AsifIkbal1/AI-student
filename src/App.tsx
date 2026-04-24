@@ -6,6 +6,7 @@ import { LanguageProvider } from "./components/LanguageContext";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./components/Dashboard";
 import { AITutor } from "./components/AITutor";
+import { NeuroTest } from "./components/NeuroTest/NeuroTest";
 import { LandingPage } from "./components/LandingPage";
 import { Loader2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -21,6 +22,8 @@ const ScrollToTop = () => {
 
 import { AINoteMaker } from "./components/AINoteMaker";
 import { AIQuiz } from "./components/AIQuiz";
+import { DigitalNotes } from "./components/DigitalNotes";
+import { CortexStudio } from "./components/CortexStudio/CortexStudio";
 import { AdminDashboard } from "./components/AdminDashboard";
 
 import { AIEssayWriter } from "./components/AIEssayWriter";
@@ -44,6 +47,8 @@ import { AIDiagramGenerator } from "./components/AIDiagramGenerator";
 import { SmartResources } from "./components/SmartResources";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AccessPage } from "./components/AccessPage";
+import { PolicyPage } from "./components/PolicyPage";
+
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: boolean }> = ({ children, requireAccess = true }) => {
   const { user, profile, loading } = useAuth();
@@ -107,6 +112,9 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/neurotest-ai" element={<ProtectedRoute requireAccess={false}><NeuroTest /></ProtectedRoute>} />
+                <Route path="/digital-notes" element={<ProtectedRoute requireAccess={false}><DigitalNotes /></ProtectedRoute>} />
+                <Route path="/cortex-studio" element={<ProtectedRoute><CortexStudio /></ProtectedRoute>} />
                 <Route path="/zenpath" element={<ProtectedRoute><ZenPathAI /></ProtectedRoute>} />
                 <Route path="/tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
                 {/* Placeholder routes for other features */}
@@ -128,6 +136,8 @@ const App: React.FC = () => {
                 <Route path="/subscription" element={<ProtectedRoute requireAccess={false}><Subscription /></ProtectedRoute>} />
                 <Route path="/access" element={<ProtectedRoute requireAccess={false}><AccessPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/policy/:type" element={<PolicyPage />} />
+
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Router>

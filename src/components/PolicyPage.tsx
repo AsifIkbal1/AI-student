@@ -1,0 +1,178 @@
+import React from "react";
+import { Shield, FileText, RefreshCw, Mail, ArrowLeft, GraduationCap } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
+import { cn } from "../lib/utils";
+
+const policyContent = {
+  privacy: {
+    title: "Privacy Policy",
+    icon: Shield,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    content: (
+      <div className="space-y-6">
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">1. Information We Collect</h3>
+          <p className="text-gray-600 leading-relaxed">
+            We collect information you provide directly to us when you create an account, update your profile, or use our AI services. This includes your name, email address, and the academic content you process through our AI tools.
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">2. How We Use Your Information</h3>
+          <p className="text-gray-600 leading-relaxed">
+            We use the information to provide, maintain, and improve our services, develop new features, and protect AI Students and our users. Your academic data is used solely to provide personalized AI responses and is not shared with third parties for marketing.
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Data Security</h3>
+          <p className="text-gray-600 leading-relaxed">
+            We use industry-standard encryption and security measures to protect your personal information and academic data from unauthorized access, disclosure, or destruction.
+          </p>
+        </section>
+      </div>
+    )
+  },
+  terms: {
+    title: "Terms & Conditions",
+    icon: FileText,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+    content: (
+      <div className="space-y-6">
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">1. Acceptance of Terms</h3>
+          <p className="text-gray-600 leading-relaxed">
+            By accessing or using AI Students, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">2. Use of Service</h3>
+          <p className="text-gray-600 leading-relaxed">
+            You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. The AI-generated content is for educational purposes and should be verified for academic accuracy.
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Intellectual Property</h3>
+          <p className="text-gray-600 leading-relaxed">
+            The service and its original content, features, and functionality are and will remain the exclusive property of AI Students and its licensors.
+          </p>
+        </section>
+      </div>
+    )
+  },
+  refund: {
+    title: "Refund Policy",
+    icon: RefreshCw,
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50",
+    content: (
+      <div className="space-y-6">
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">1. Subscription Refunds</h3>
+          <p className="text-gray-600 leading-relaxed">
+            We offer a 7-day money-back guarantee for our premium subscriptions if you are not satisfied with the service. To request a refund, please contact our support team.
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">2. Processing Refunds</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Once approved, refunds are processed within 5-10 business days and will be credited back to your original payment method (Stripe or SSLCommerz).
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Non-Refundable Items</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Usage-based charges or promotional credits are generally non-refundable unless required by law.
+          </p>
+        </section>
+      </div>
+    )
+  },
+  contact: {
+    title: "Contact Us",
+    icon: Mail,
+    color: "text-pink-600",
+    bgColor: "bg-pink-50",
+    content: (
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="glass-panel p-6 rounded-2xl border-blue-100">
+            <h4 className="font-bold text-gray-900 mb-2">Email Support</h4>
+            <p className="text-gray-600">support@aistudents.com</p>
+            <p className="text-xs text-gray-400 mt-1">Response time: &lt; 24 hours</p>
+          </div>
+          <div className="glass-panel p-6 rounded-2xl border-purple-100">
+            <h4 className="font-bold text-gray-900 mb-2">Technical Issues</h4>
+            <p className="text-gray-600">tech@aistudents.com</p>
+            <p className="text-xs text-gray-400 mt-1">Available 24/7</p>
+          </div>
+        </div>
+        <form className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" placeholder="Your Name" className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input type="email" placeholder="Your Email" className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <textarea placeholder="How can we help?" rows={4} className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+          <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold hover:shadow-lg transition-all">
+            Send Message
+          </button>
+        </form>
+      </div>
+    )
+  }
+};
+
+export const PolicyPage: React.FC = () => {
+  const { type } = useParams<{ type: string }>();
+  const navigate = useNavigate();
+  const policy = policyContent[type as keyof typeof policyContent];
+
+  if (!policy) {
+    return <div className="min-h-screen flex items-center justify-center">Policy not found</div>;
+  }
+
+  const Icon = policy.icon;
+
+  return (
+    <div className="min-h-screen bg-gradient-mesh py-12 px-6">
+      <div className="max-w-4xl mx-auto">
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-8 font-semibold transition-colors group"
+        >
+          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+          Back
+        </button>
+
+        <div className="glass-panel rounded-[2rem] p-8 md:p-12 shadow-2xl border-white/40">
+          <div className="flex items-center gap-6 mb-12">
+            <div className={cn("p-5 rounded-2xl shadow-lg", policy.bgColor)}>
+              <Icon className={policy.color} size={40} />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-gray-900 tracking-tight">{policy.title}</h1>
+              <p className="text-gray-500 font-medium mt-1">Last updated: April 2026</p>
+            </div>
+          </div>
+
+          <div className="prose prose-blue max-w-none">
+            {policy.content}
+          </div>
+
+          <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <GraduationCap className="text-white" size={20} />
+              </div>
+              <span className="font-bold text-gray-900">AI Students</span>
+            </div>
+            <p className="text-sm text-gray-500 font-medium">
+              © 2026 AI Students. Empowering the next generation of learners.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

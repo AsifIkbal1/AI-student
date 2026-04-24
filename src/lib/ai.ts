@@ -1,4 +1,4 @@
-import { ai, MODELS, generateQuiz, handleAIError, logUsage, generateTutorResponse, generateNotes, generateSlides, chatWithPDF, generateEssay, generateFlashcards, solveDoubt, summarizeVideo, helpWithCode, generateSmartStudyPackage, analyzeSkillGap, generateCareerRoadmap, generateStudyPlan } from "./gemini";
+import { ai, MODELS, generateQuiz, handleAIError, logUsage, generateTutorResponse, generateNotes, generateSlides, chatWithPDF, generateEssay, generateFlashcards, solveDoubt, summarizeVideo, helpWithCode, generateSmartStudyPackage, analyzeSkillGap, generateCareerRoadmap, generateStudyPlan, digitalNotesProcess } from "./gemini";
 
 export { 
   generateQuiz, 
@@ -16,7 +16,8 @@ export {
   generateSmartStudyPackage, 
   analyzeSkillGap, 
   generateCareerRoadmap, 
-  generateStudyPlan 
+  generateStudyPlan,
+  digitalNotesProcess
 };
 
 export async function analyzeEssay(essayText: string) {

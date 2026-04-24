@@ -1,7 +1,9 @@
 import React from "react";
 import { useAuth } from "./AuthContext";
-import { GraduationCap, ArrowRight, Sparkles, Brain, Clock, ShieldCheck, Users, BookOpen } from "lucide-react";
+import { GraduationCap, ArrowRight, Sparkles, Brain, Clock, ShieldCheck, Shield, FileText, RefreshCw, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
+
 import { cn } from "../lib/utils";
 
 export const LandingPage: React.FC = () => {
@@ -130,10 +132,53 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Policies & Contact Section */}
+      <section className="py-24 relative z-10 bg-white/30 backdrop-blur-md border-y border-white/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              { icon: Shield, title: "Privacy Policy", link: "/policy/privacy", color: "text-blue-600", bg: "bg-blue-50" },
+              { icon: FileText, title: "Terms & Conditions", link: "/policy/terms", color: "text-purple-600", bg: "bg-purple-50" },
+              { icon: RefreshCw, title: "Refund Policy", link: "/policy/refund", color: "text-emerald-600", bg: "bg-emerald-50" },
+              { icon: Mail, title: "Contact Us", link: "/policy/contact", color: "text-pink-600", bg: "bg-pink-50" }
+            ].map((item, idx) => (
+              <Link 
+                key={idx} 
+                to={item.link}
+                className="group p-6 rounded-3xl transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 flex flex-col items-center text-center"
+              >
+                <div className={cn("p-4 rounded-2xl mb-4 transition-transform group-hover:scale-110", item.bg)}>
+                  <item.icon className={item.color} size={28} />
+                </div>
+                <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{item.title}</h4>
+                <p className="text-xs text-gray-500 mt-2 font-medium opacity-0 group-hover:opacity-100 transition-opacity">Read Details →</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="py-12 text-center text-gray-500 font-medium relative z-10 glass-panel border-x-0 border-b-0 rounded-none">
-        <p>© 2026 AI Students. All rights reserved.</p>
+      <footer className="py-12 relative z-10 glass-panel border-x-0 border-b-0 rounded-none bg-white/20">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 p-2 rounded-lg">
+              <GraduationCap className="text-white" size={20} />
+            </div>
+            <span className="text-xl font-bold text-gray-900">AI Students</span>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-8 text-sm font-bold text-gray-600">
+            <Link to="/policy/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
+            <Link to="/policy/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
+            <Link to="/policy/refund" className="hover:text-blue-600 transition-colors">Refund</Link>
+            <Link to="/policy/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
+          </div>
+
+          <p className="text-sm text-gray-500 font-medium">© 2026 AI Students. All rights reserved.</p>
+        </div>
       </footer>
+
     </div>
   );
 };

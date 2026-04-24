@@ -139,22 +139,22 @@ export const AITutor: React.FC = () => {
         )}
       </div>
 
-      <div className="p-6 border-t border-gray-100">
-        <div className="flex gap-2">
+      <div className="p-8 border-t border-gray-100 bg-gray-50/50">
+        <div className="flex gap-4">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Ask a question..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="flex-1 bg-white border border-gray-200 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all"
+            className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200 flex items-center justify-center min-w-[64px]"
           >
-            <Send size={24} />
+            {loading ? <Loader2 className="animate-spin" size={28} /> : <Send size={28} />}
           </button>
         </div>
       </div>

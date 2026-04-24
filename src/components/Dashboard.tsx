@@ -265,6 +265,15 @@ export const Dashboard: React.FC = () => {
       path: "/smart-resources",
       color: "from-emerald-700 to-emerald-800",
       category: "Tools"
+    },
+    {
+      icon: FileText,
+      title: t("digital_notes"),
+      description: t("desc_digital_notes"),
+      path: "/digital-notes",
+      color: "from-blue-600 to-indigo-600",
+      category: "Tools",
+      badge: "New" as const
     }
   ];
 

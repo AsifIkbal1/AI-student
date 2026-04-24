@@ -23,6 +23,7 @@ export const en = {
   admin_only: "Admin Only",
   sign_out: "Sign Out",
   neurotest_ai: "NeuroTest AI",
+  digital_notes: "Digital Notes",
   
   // Dashboard
   welcome_back: "Welcome back",
@@ -57,6 +58,7 @@ export const en = {
   desc_tracker: "Track your daily study goals and monitor your academic progress.",
   desc_diagrams: "Transform complex notes and PDFs into visual mind maps and flowcharts.",
   desc_smart_resources: "Get AI-recommended academic papers, books, and videos based on your study topic.",
+  desc_digital_notes: "Extract text from images, summarize, paraphrase and get keywords for free.",
   
   // Auth/Denied
   access_denied: "Access Denied",

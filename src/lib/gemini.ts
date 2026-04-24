@@ -410,3 +410,20 @@ export async function generateStudyPlan(topic: string, duration: string) {
   });
   return { text: response.text, usage: response.usageMetadata };
 }
+
+export async function digitalNotesProcess(content: string, mode: 'summarize' | 'paraphrase' | 'keywords') {
+  checkApiKey();
+  let prompt = "";
+  if (mode === 'summarize') prompt = `Summarize the following text concisely and provide key takeaways:\n\n${content}`;
+  else if (mode === 'paraphrase') prompt = `Paraphrase the following text in a clear, professional way while keeping the original meaning:\n\n${content}`;
+  else if (mode === 'keywords') prompt = `Extract the most important keywords and concepts from the following text and provide brief definitions for each:\n\n${content}`;
+
+  const response = await ai.models.generateContent({
+    model: MODELS.FLASH,
+    contents: prompt,
+    config: {
+      systemInstruction: "You are an AI Digital Notes Assistant. Provide high-quality, student-friendly academic output.",
+    },
+  });
+  return { text: response.text, usage: response.usageMetadata };
+}

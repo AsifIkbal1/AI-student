@@ -29,12 +29,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  Cpu
 } from "lucide-react";
 
 import { useAuth } from "./AuthContext";
 import { useTheme } from "./ThemeContext";
 import { useLanguage } from "./LanguageContext";
+import { CortexNotificationListener } from "./CortexStudio/CortexNotificationListener";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -103,6 +105,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: CheckSquare, label: t("tracker"), path: "/tracker" },
     { icon: Network, label: t("diagrams"), path: "/diagrams" },
     { icon: Library, label: t("smart_resources"), path: "/smart-resources" },
+    { icon: Cpu, label: t("cortex_studio"), path: "/cortex-studio" },
     { icon: CreditCard, label: t("subscription"), path: "/subscription" },
   ];
 
@@ -373,6 +376,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </footer>
       </main>
+      <CortexNotificationListener />
     </div>
   );
 };

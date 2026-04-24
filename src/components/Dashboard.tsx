@@ -17,7 +17,8 @@ import {
   Leaf,
   Network,
   Library,
-  Search
+  Search,
+  Cpu
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
@@ -265,6 +266,15 @@ export const Dashboard: React.FC = () => {
       path: "/smart-resources",
       color: "from-emerald-700 to-emerald-800",
       category: "Tools"
+    },
+    {
+      icon: Cpu,
+      title: t("cortex_studio"),
+      description: t("desc_cortex_studio"),
+      path: "/cortex-studio",
+      color: "from-indigo-600 to-violet-700",
+      category: "Tools",
+      badge: "New" as const
     },
     {
       icon: FileText,

@@ -23,6 +23,7 @@ const ScrollToTop = () => {
 import { AINoteMaker } from "./components/AINoteMaker";
 import { AIQuiz } from "./components/AIQuiz";
 import { DigitalNotes } from "./components/DigitalNotes";
+import { CortexStudio } from "./components/CortexStudio/CortexStudio";
 import { AdminDashboard } from "./components/AdminDashboard";
 
 import { AIEssayWriter } from "./components/AIEssayWriter";
@@ -113,6 +114,7 @@ const App: React.FC = () => {
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/neurotest-ai" element={<ProtectedRoute requireAccess={false}><NeuroTest /></ProtectedRoute>} />
                 <Route path="/digital-notes" element={<ProtectedRoute requireAccess={false}><DigitalNotes /></ProtectedRoute>} />
+                <Route path="/cortex-studio" element={<ProtectedRoute><CortexStudio /></ProtectedRoute>} />
                 <Route path="/zenpath" element={<ProtectedRoute><ZenPathAI /></ProtectedRoute>} />
                 <Route path="/tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
                 {/* Placeholder routes for other features */}

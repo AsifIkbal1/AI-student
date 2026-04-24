@@ -18,6 +18,7 @@ export const en = {
   tracker: "Study Planner Tracker",
   diagrams: "AI Mind Map & Diagrams",
   smart_resources: "Smart Resources",
+  cortex_studio: "Cortex Studio",
   subscription: "Subscription",
   admin_dashboard: "Admin Dashboard",
   admin_only: "Admin Only",
@@ -58,6 +59,7 @@ export const en = {
   desc_tracker: "Track your daily study goals and monitor your academic progress.",
   desc_diagrams: "Transform complex notes and PDFs into visual mind maps and flowcharts.",
   desc_smart_resources: "Get AI-recommended academic papers, books, and videos based on your study topic.",
+  desc_cortex_studio: "Build and automate your personal AI agents with memory and tools.",
   desc_digital_notes: "Extract text from images, summarize, paraphrase and get keywords for free.",
   
   // Auth/Denied

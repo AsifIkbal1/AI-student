@@ -113,7 +113,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/neurotest-ai" element={<ProtectedRoute requireAccess={false}><NeuroTest /></ProtectedRoute>} />
-                <Route path="/digital-notes" element={<ProtectedRoute requireAccess={false}><DigitalNotes /></ProtectedRoute>} />
+                <Route path="/digital-notes" element={<ProtectedRoute><DigitalNotes /></ProtectedRoute>} />
                 <Route path="/cortex-studio" element={<ProtectedRoute><CortexStudio /></ProtectedRoute>} />
                 <Route path="/zenpath" element={<ProtectedRoute><ZenPathAI /></ProtectedRoute>} />
                 <Route path="/tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />

@@ -105,12 +105,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: Network, label: t("diagrams"), path: "/diagrams" },
     { icon: Library, label: t("smart_resources"), path: "/smart-resources" },
     { icon: Cpu, label: t("cortex_studio"), path: "/cortex-studio" },
+    { icon: FileText, label: t("digital_notes"), path: "/digital-notes" },
     { icon: CreditCard, label: t("subscription"), path: "/subscription" },
   ];
 
   const specializedItems = [
     { icon: Brain, label: t("neurotest_ai"), path: "/neurotest-ai" },
-    { icon: FileText, label: t("digital_notes"), path: "/digital-notes" },
   ];
 
   const adminItems = [

@@ -32,7 +32,12 @@ export const ChatWithPDF: React.FC = () => {
 
   const extractTextFromPDF = async (data: string): Promise<string> => {
     try {
-      const loadingTask = pdfjs.getDocument({ data: atob(data) });
+      const binaryString = atob(data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const loadingTask = pdfjs.getDocument({ data: bytes });
       const pdf = await loadingTask.promise;
       let fullText = "";
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -86,12 +91,15 @@ export const ChatWithPDF: React.FC = () => {
     setLoading(true);
 
     try {
-      const history = messages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
-      }));
+      const history = messages
+        .filter((m, i) => !(i === 0 && m.role === "model")) // Skip initial bot greeting
+        .map(m => ({
+          role: m.role,
+          parts: [{ text: m.text }]
+        }));
       
-      const promptWithContext = file.extractedText 
+      const isFirstUserMessage = messages.filter(m => m.role === "user").length === 0;
+      const promptWithContext = (file.extractedText && isFirstUserMessage)
         ? `Context from PDF:\n${file.extractedText}\n\nQuestion: ${input}`
         : input;
 
@@ -143,13 +151,14 @@ export const ChatWithPDF: React.FC = () => {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30">
         {!file && (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+          <label className="h-full flex flex-col items-center justify-center text-center space-y-4 cursor-pointer hover:opacity-80 transition-opacity">
             <div className="bg-red-50 p-8 rounded-full">
               <Upload className="text-red-600" size={48} />
             </div>
             <h3 className="text-xl font-bold text-gray-900">Upload a PDF to start</h3>
             <p className="text-gray-500 max-w-xs">Once uploaded, you can ask any question about the content of the PDF.</p>
-          </div>
+            <input type="file" className="hidden" accept=".pdf" onChange={handleFileChange} />
+          </label>
         )}
 
         {messages.map((msg, idx) => (

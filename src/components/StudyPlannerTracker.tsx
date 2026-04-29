@@ -82,8 +82,8 @@ export const StudyPlannerTracker: React.FC = () => {
     }
   };
 
-  const completedCount = tasks.filter(t => t.completed).length;
-  const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
+  const completedCount = (Array.isArray(tasks) ? tasks : []).filter(t => t.completed).length;
+  const progress = (Array.isArray(tasks) && tasks.length > 0) ? (completedCount / tasks.length) * 100 : 0;
 
   return (
     <div className="max-w-5xl mx-auto">

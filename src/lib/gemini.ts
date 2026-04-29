@@ -22,11 +22,11 @@ export const MODELS = {
   IMAGE: "gemini-2.5-flash-image",
 };
 
-export async function generateQuiz(topic: string, difficulty: string = "Medium") {
+export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
   checkApiKey();
   const response = await ai.models.generateContent({
     model: MODELS.FLASH,
-    contents: `Generate a 5-question quiz on the topic: ${topic} with difficulty: ${difficulty}.`,
+    contents: `Generate a ${questionCount}-question quiz on the topic: ${topic} with difficulty: ${difficulty}.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -177,15 +177,20 @@ Content:
 
 export async function chatWithPDF(prompt: string, fileData: { data: string, mimeType: string }, history: any[] = []) {
   checkApiKey();
+  
+  const userParts: any[] = [];
+  if (fileData && fileData.data) {
+    userParts.push({ inlineData: fileData });
+  }
+  userParts.push({ text: `You are a PDF Assistant. Answer the user's question based ONLY on the provided document. If the answer is not in the document, say you don't know.\n\nQuestion: ${prompt}` });
+
   const response = await ai.models.generateContent({
     model: MODELS.FLASH,
     contents: [
+      ...history,
       {
         role: "user",
-        parts: [
-          { inlineData: fileData },
-          { text: `You are a PDF Assistant. Answer the user's question based ONLY on the provided document. If the answer is not in the document, say you don't know.\n\nQuestion: ${prompt}` }
-        ]
+        parts: userParts
       }
     ],
     config: {

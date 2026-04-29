@@ -120,9 +120,9 @@ export const Dashboard: React.FC = () => {
     };
   }, [profile]);
 
-  const completedCount = tasks.filter(t => t.completed).length;
-  const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
-  const upcomingTasks = tasks.filter(t => !t.completed).slice(0, 3);
+  const completedCount = (Array.isArray(tasks) ? tasks : []).filter(t => t.completed).length;
+  const progress = (Array.isArray(tasks) && tasks.length > 0) ? (completedCount / tasks.length) * 100 : 0;
+  const upcomingTasks = (Array.isArray(tasks) ? tasks : []).filter(t => !t.completed).slice(0, 3);
 
   const COLORS = ['#3b82f6', '#6366f1', '#10b981', '#a855f7', '#f97316', '#ec4899', '#ef4444', '#06b6d4'];
 
@@ -184,14 +184,6 @@ export const Dashboard: React.FC = () => {
       color: "from-red-500 to-red-600",
       category: "Tools",
       badge: "Popular" as const
-    },
-    {
-      icon: Video,
-      title: t("video_summarizer"),
-      description: t("desc_video"),
-      path: "/video-summarizer",
-      color: "from-rose-500 to-rose-600",
-      category: "Tools"
     },
     {
       icon: Code,

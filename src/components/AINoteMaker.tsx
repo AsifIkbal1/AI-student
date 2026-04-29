@@ -64,7 +64,7 @@ export const AINoteMaker: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-[98%] mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">AI Note Maker</h1>
@@ -82,9 +82,9 @@ export const AINoteMaker: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-16rem)]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-16rem)]">
         {/* Input Area */}
-        <div className="flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="lg:col-span-4 flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
             <span className="text-sm font-bold text-gray-700">Source Content</span>
           </div>
@@ -107,7 +107,7 @@ export const AINoteMaker: React.FC = () => {
         </div>
 
         {/* Output Area */}
-        <div className="flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="lg:col-span-8 flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50">
             <span className="text-sm font-bold text-gray-700">AI Generated Notes</span>
           </div>

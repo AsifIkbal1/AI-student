@@ -95,7 +95,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: Brain, label: t("flashcards"), path: "/flashcards" },
     { icon: Calendar, label: t("planner"), path: "/planner" },
     { icon: ShieldCheck, label: t("doubt_solver"), path: "/doubt-solver" },
-    { icon: Video, label: t("video_summarizer"), path: "/video-summarizer" },
     { icon: Code, label: t("code_helper"), path: "/code-helper" },
     { icon: Presentation, label: t("slides"), path: "/slides" },
     { icon: FileSearch, label: t("chat_pdf"), path: "/chat-pdf" },
@@ -348,7 +347,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         "flex-1 overflow-y-auto transition-colors pt-16 md:pt-0 bg-transparent flex flex-col"
       )}>
 
-        <div className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="w-full p-4 md:p-8">
           {children}
         </div>
 

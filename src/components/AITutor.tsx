@@ -76,7 +76,7 @@ export const AITutor: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)] flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="w-full max-w-[95%] mx-auto h-[calc(100vh-4rem)] flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-gray-100 flex items-center gap-3">
         <div className="bg-blue-600 p-2 rounded-lg">
           <Bot className="text-white" size={24} />

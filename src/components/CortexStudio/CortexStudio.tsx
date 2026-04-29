@@ -52,10 +52,13 @@ export const CortexStudio: React.FC = () => {
       ]);
       const agentsData = await agentsRes.json();
       const tasksData = await tasksRes.json();
-      setAgents(agentsData);
-      setTasks(tasksData);
+      
+      setAgents(Array.isArray(agentsData) ? agentsData : []);
+      setTasks(Array.isArray(tasksData) ? tasksData : []);
     } catch (error) {
       console.error("Error fetching Cortex data:", error);
+      setAgents([]);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -205,7 +208,7 @@ export const CortexStudio: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                   { label: "Active Agents", value: agents.length, icon: Bot, color: "text-blue-500" },
-                  { label: "Tasks Running", value: tasks.filter(t => t.status === "active").length, icon: Activity, color: "text-emerald-500" },
+                  { label: "Tasks Running", value: (Array.isArray(tasks) ? tasks : []).filter(t => t.status === "active").length, icon: Activity, color: "text-emerald-500" },
                   { label: "Memory Points", value: "248", icon: Brain, color: "text-purple-500" },
                 ].map((stat, i) => (
                   <div key={i} className={cn(

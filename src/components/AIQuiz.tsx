@@ -22,6 +22,7 @@ export const AIQuiz: React.FC = () => {
   const { profile, deductCredits } = useAuth();
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
+  const [questionCount, setQuestionCount] = useState<number>(5);
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(false);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
@@ -42,7 +43,7 @@ export const AIQuiz: React.FC = () => {
     setShowResults(false);
     setError(null);
     try {
-      const { data, usage } = await generateQuiz(topic, difficulty);
+      const { data, usage } = await generateQuiz(topic, difficulty, questionCount);
       
       if (!data || !Array.isArray(data.questions) || data.questions.length === 0) {
         throw new Error("The AI returned an invalid quiz structure. Please try again.");
@@ -110,23 +111,36 @@ export const AIQuiz: React.FC = () => {
                 {error}
               </div>
             )}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Difficulty Level</label>
-              <div className="flex gap-4">
-                {["Easy", "Medium", "Hard"].map((lvl) => (
-                  <button
-                    key={lvl}
-                    onClick={() => setDifficulty(lvl as any)}
-                    className={cn(
-                      "flex-1 py-3 rounded-xl font-semibold border transition-all",
-                      difficulty === lvl 
-                        ? "bg-blue-600 border-blue-600 text-white" 
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                    )}
-                  >
-                    {lvl}
-                  </button>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Difficulty Level</label>
+                <div className="flex gap-2">
+                  {["Easy", "Medium", "Hard"].map((lvl) => (
+                    <button
+                      key={lvl}
+                      onClick={() => setDifficulty(lvl as any)}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl font-semibold border transition-all text-sm",
+                        difficulty === lvl 
+                          ? "bg-blue-600 border-blue-600 text-white" 
+                          : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                      )}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Number of Questions</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={questionCount}
+                  onChange={(e) => setQuestionCount(parseInt(e.target.value) || 5)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
               </div>
             </div>
             <button

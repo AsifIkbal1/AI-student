@@ -48,6 +48,7 @@ import { SmartResources } from "./components/SmartResources";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AccessPage } from "./components/AccessPage";
 import { PolicyPage } from "./components/PolicyPage";
+import { CheckoutPage } from "./components/CheckoutPage";
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: boolean }> = ({ children, requireAccess = true }) => {
@@ -135,6 +136,7 @@ const App: React.FC = () => {
                 <Route path="/smart-resources" element={<ProtectedRoute><SmartResources /></ProtectedRoute>} />
                 <Route path="/subscription" element={<ProtectedRoute requireAccess={false}><Subscription /></ProtectedRoute>} />
                 <Route path="/access" element={<ProtectedRoute requireAccess={false}><AccessPage /></ProtectedRoute>} />
+                <Route path="/checkout/:planId/:interval" element={<ProtectedRoute requireAccess={false}><CheckoutPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                 <Route path="/policy/:type" element={<PolicyPage />} />
 

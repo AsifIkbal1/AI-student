@@ -39,6 +39,8 @@ export const AdminDashboard: React.FC = () => {
   const [userUsage, setUserUsage] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [manualPayments, setManualPayments] = useState<any[]>([]);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     // Real-time stats
@@ -59,47 +61,59 @@ export const AdminDashboard: React.FC = () => {
       }
     }, (error) => console.error("Config listener error:", error));
 
-    const unsubscribeLogs = onSnapshot(
-      query(collection(db, "usageLogs"), orderBy("timestamp", "desc"), limit(100)),
+    // Listen to ALL usage logs for stats calculation (Real-time)
+    const unsubscribeStats = onSnapshot(collection(db, "usageLogs"), (snap) => {
+      let totalTokensUsed = 0;
+      let totalCost = 0;
+      const userMap: any = {};
+      
+      snap.docs.forEach((doc) => {
+        const log = doc.data();
+        const tokens = log.totalTokens || 0;
+        totalTokensUsed += tokens;
+
+        // Calculate Cost
+        let cost = 0;
+        const promptTokens = log.promptTokens || 0;
+        const completionTokens = log.completionTokens || 0;
+
+        if (log.tool === "summarizeVideo") {
+          cost = (promptTokens * 3.5 / 1000000) + (completionTokens * 10.5 / 1000000);
+        } else if (["solveDoubt", "AICodeHelper-debug"].includes(log.tool)) {
+          cost = (promptTokens * 5.0 / 1000000) + (completionTokens * 15.0 / 1000000);
+        } else {
+          cost = (promptTokens * 0.15 / 1000000) + (completionTokens * 0.60 / 1000000);
+        }
+        totalCost += cost;
+
+        // User Map for activity
+        if (!userMap[log.uid]) {
+          userMap[log.uid] = { 
+            uid: log.uid, 
+            totalTokens: 0, 
+            tools: {}, 
+            lastSeen: log.timestamp 
+          };
+        }
+        userMap[log.uid].totalTokens += tokens;
+        userMap[log.uid].tools[log.tool] = (userMap[log.uid].tools[log.tool] || 0) + 1;
+      });
+
+      setStats(prev => ({
+        ...prev,
+        totalCreditsUsed: totalTokensUsed,
+        remainingApiCredits: prev.totalApiCredits - totalTokensUsed,
+        apiCost: Number(totalCost.toFixed(4))
+      }));
+      setUserUsage(Object.values(userMap));
+    });
+
+    // Recent logs listener (limited for UI)
+    const unsubscribeRecentLogs = onSnapshot(
+      query(collection(db, "usageLogs"), orderBy("timestamp", "desc"), limit(10)),
       (snap) => {
-        const logs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setRecentLogs(logs.slice(0, 10));
-
-        // Calculate Cost and User Usage
-        let totalCost = 0;
-        const userMap: any = {};
-        
-        logs.forEach((log: any) => {
-          let cost = 0;
-          const promptTokens = log.promptTokens || 0;
-          const completionTokens = log.completionTokens || 0;
-
-          if (log.tool === "summarizeVideo") {
-            cost = (promptTokens * 3.5 / 1000000) + (completionTokens * 10.5 / 1000000);
-          } else if (["solveDoubt", "AICodeHelper-debug"].includes(log.tool)) {
-            cost = (promptTokens * 5.0 / 1000000) + (completionTokens * 15.0 / 1000000);
-          } else {
-            cost = (promptTokens * 0.15 / 1000000) + (completionTokens * 0.60 / 1000000);
-          }
-          
-          totalCost += cost;
-
-          if (!userMap[log.uid]) {
-            userMap[log.uid] = { 
-              uid: log.uid, 
-              totalTokens: 0, 
-              tools: {}, 
-              lastSeen: log.timestamp 
-            };
-          }
-          userMap[log.uid].totalTokens += log.totalTokens || 0;
-          userMap[log.uid].tools[log.tool] = (userMap[log.uid].tools[log.tool] || 0) + 1;
-        });
-
-        setStats(prev => ({ ...prev, apiCost: Number(totalCost.toFixed(4)) }));
-        setUserUsage(Object.values(userMap));
-      },
-      (error) => console.error("Usage logs listener error:", error)
+        setRecentLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }
     );
 
     const unsubscribeLoginLogs = onSnapshot(
@@ -108,6 +122,22 @@ export const AdminDashboard: React.FC = () => {
         setLoginLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       }
     );
+
+    const fetchManualPayments = async () => {
+      try {
+        const response = await fetch("/api/payment/manual/all");
+        if (!response.ok) throw new Error("Failed to fetch payments");
+        const data = await response.json();
+        setManualPayments(data);
+        setPaymentError(null);
+      } catch (error: any) {
+        console.error("Error fetching manual payments:", error);
+        setPaymentError(error.message);
+      }
+    };
+
+    fetchManualPayments();
+    const paymentInterval = setInterval(fetchManualPayments, 30000); // Auto refresh every 30s
 
     // Mock chart data
     setChartData([
@@ -123,8 +153,10 @@ export const AdminDashboard: React.FC = () => {
     return () => {
       unsubscribeUsers();
       unsubscribeConfig();
-      unsubscribeLogs();
+      unsubscribeStats();
+      unsubscribeRecentLogs();
       unsubscribeLoginLogs();
+      clearInterval(paymentInterval);
     };
   }, []);
 
@@ -145,6 +177,57 @@ export const AdminDashboard: React.FC = () => {
       });
     } catch (error) {
       console.error("Error toggling approval status:", error);
+    }
+  };
+
+  const handleApprovePayment = async (paymentId: string, payment: any) => {
+    if (!window.confirm("Are you sure you want to approve this payment and activate the subscription?")) return;
+    try {
+      const response = await fetch("/api/payment/manual/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId,
+          uid: payment.uid,
+          planId: payment.planId,
+          interval: payment.interval
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to approve payment");
+      
+      // Refresh list
+      const updatedResponse = await fetch("/api/payment/manual/all");
+      const updatedData = await updatedResponse.json();
+      setManualPayments(updatedData);
+      
+      alert("Payment approved successfully");
+    } catch (error) {
+      console.error("Error approving payment:", error);
+      alert("Failed to approve payment");
+    }
+  };
+
+  const handleRejectPayment = async (paymentId: string) => {
+    if (!window.confirm("Are you sure you want to reject this payment?")) return;
+    try {
+      const response = await fetch("/api/payment/manual/reject", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId })
+      });
+
+      if (!response.ok) throw new Error("Failed to reject payment");
+
+      // Refresh list
+      const updatedResponse = await fetch("/api/payment/manual/all");
+      const updatedData = await updatedResponse.json();
+      setManualPayments(updatedData);
+
+      alert("Payment rejected");
+    } catch (error) {
+      console.error("Error rejecting payment:", error);
+      alert("Failed to reject payment");
     }
   };
 
@@ -188,6 +271,90 @@ export const AdminDashboard: React.FC = () => {
         <StatCard title="Total Users" value={stats.totalUsers} icon={Users} trend="up" trendValue="12%" />
         <StatCard title="Total API Credits" value={stats.totalApiCredits.toLocaleString()} icon={CreditCard} trend="up" trendValue="0%" />
         <StatCard title="Credits Remaining" value={stats.remainingApiCredits.toLocaleString()} icon={Activity} trend="down" trendValue="15%" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 mb-10">
+        {/* Manual Payment Requests Table */}
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Manual Payment Requests</h3>
+            <span className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1 rounded-full">{manualPayments.filter(p => p.status === 'pending').length} Pending</span>
+          </div>
+          {paymentError && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 text-sm font-bold">
+              Error loading payments: {paymentError}
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                  <th className="pb-4 px-4">User</th>
+                  <th className="pb-4 px-4">Plan & Amount</th>
+                  <th className="pb-4 px-4">Method & TrxID</th>
+                  <th className="pb-4 px-4">Date</th>
+                  <th className="pb-4 px-4">Status</th>
+                  <th className="pb-4 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {manualPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">No payment requests found.</td>
+                  </tr>
+                ) : manualPayments.map((payment) => (
+                  <tr key={payment.id} className="text-sm hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">{payment.displayName || "Unknown"}</p>
+                        <p className="text-xs text-gray-500">{payment.email}</p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="font-bold text-gray-900 capitalize">{payment.planId} ({payment.interval})</p>
+                      <p className="text-xs text-gray-500">৳{payment.amount}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="font-bold text-blue-600 uppercase">{payment.method}</p>
+                      <p className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit">{payment.transactionId}</p>
+                    </td>
+                    <td className="py-4 px-4 text-xs text-gray-500">
+                      {payment.timestamp ? new Date(payment.timestamp.seconds * 1000).toLocaleString() : "Just now"}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase w-fit",
+                        payment.status === "approved" ? "bg-emerald-50 text-emerald-600" : 
+                        payment.status === "rejected" ? "bg-red-50 text-red-600" : 
+                        "bg-amber-50 text-amber-600"
+                      )}>
+                        {payment.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      {payment.status === "pending" && (
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => handleApprovePayment(payment.id, payment)}
+                            className="px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleRejectPayment(payment.id)}
+                            className="px-4 py-1.5 rounded-xl text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-8 mb-10">

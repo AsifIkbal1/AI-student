@@ -99,5 +99,12 @@ service cloud.firestore {
                     request.resource.data.usedBy == request.auth.uid;
       allow delete: if isAdmin();
     }
+
+    // Manual Payments
+    match /manual_payments/{paymentId} {
+      allow read: if isAdmin();
+      allow create: if isNotBlocked() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
   }
 }

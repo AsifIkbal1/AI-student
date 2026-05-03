@@ -2,14 +2,13 @@ import React from "react";
 import { Check, Zap, Star, Crown } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { motion } from "motion/react";
-import { PaymentModal } from "./PaymentModal";
 import { cn } from "../lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export const Subscription: React.FC = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [billingInterval, setBillingInterval] = React.useState<"month" | "year">("month");
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
-  const [selectedPlan, setSelectedPlan] = React.useState<any>(null);
 
   const plans = [
     {
@@ -58,8 +57,7 @@ export const Subscription: React.FC = () => {
   ];
 
   const handleUpgrade = (plan: any) => {
-    setSelectedPlan(plan);
-    setIsPaymentModalOpen(true);
+    navigate(`/checkout/${plan.id}/${billingInterval}`);
   };
 
   return (
@@ -112,14 +110,6 @@ export const Subscription: React.FC = () => {
           Contact Sales
         </button>
       </div>
-
-      {isPaymentModalOpen && selectedPlan && (
-        <PaymentModal 
-          plan={{ ...selectedPlan, userId: profile?.uid }}
-          interval={billingInterval}
-          onClose={() => setIsPaymentModalOpen(false)}
-        />
-      )}
     </div>
   );
 };

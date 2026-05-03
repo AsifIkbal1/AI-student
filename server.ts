@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import Stripe from "stripe";
 import SSLCommerzPayment from "sslcommerz-lts";
 import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 import firebaseConfig from "./firebase-applet-config.json" assert { type: "json" };
 import cron from "node-cron";
 import nodemailer from "nodemailer";
@@ -29,7 +30,8 @@ if (serviceAccount) {
 } else {
   console.warn("FIREBASE_SERVICE_ACCOUNT missing. Subscription updates will fail.");
 }
-const db = admin.apps.length > 0 ? admin.firestore() : null;
+
+const db = admin.apps.length > 0 ? getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId) : null;
 
 // Cortex Collections (References)
 const cortexAgents = db?.collection("cortex_agents");
@@ -439,6 +441,97 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       console.log("SSLCommerz IPN Success:", data.tran_id);
     }
     res.json({ status: "OK" });
+  });
+
+  app.post("/api/payment/manual/submit", async (req, res) => {
+    try {
+      const { uid, email, displayName, method, planId, interval, amount, transactionId } = req.body;
+      
+      if (!db) {
+        return res.status(500).json({ error: "Firebase Admin is not initialized." });
+      }
+
+      await db.collection("manual_payments").add({
+        uid,
+        email,
+        displayName,
+        method,
+        planId,
+        interval,
+        amount,
+        transactionId,
+        status: "pending",
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error("Manual payment submit error:", error);
+      res.status(500).json({ error: "Failed to submit manual payment: " + error.message });
+    }
+  });
+
+  app.get("/api/payment/manual/all", async (req, res) => {
+    try {
+      if (!db) return res.status(500).json({ error: "Database not initialized" });
+      
+      const snapshot = await db.collection("manual_payments")
+        .orderBy("timestamp", "desc")
+        .get();
+
+      const payments = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp ? {
+          seconds: doc.data().timestamp.seconds,
+          nanoseconds: doc.data().timestamp.nanoseconds
+        } : null
+      }));
+
+      res.json(payments);
+    } catch (error: any) {
+      console.error("Error fetching manual payments:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/payment/manual/approve", async (req, res) => {
+    const { paymentId, uid, planId, interval } = req.body;
+    try {
+      if (!db) return res.status(500).json({ error: "Database not initialized" });
+
+      const expiresAt = new Date();
+      if (interval === "year") {
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      } else {
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+      }
+
+      await db.collection("manual_payments").doc(paymentId).update({ status: "approved" });
+      await db.collection("users").doc(uid).update({
+        "subscription.plan": planId,
+        "subscription.active": true,
+        "subscription.expiresAt": expiresAt.toISOString(),
+        isApproved: true
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error approving payment:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/payment/manual/reject", async (req, res) => {
+    const { paymentId } = req.body;
+    try {
+      if (!db) return res.status(500).json({ error: "Database not initialized" });
+      await db.collection("manual_payments").doc(paymentId).update({ status: "rejected" });
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error rejecting payment:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
 

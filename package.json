@@ -28,6 +28,7 @@
     "lucide-react": "^0.546.0",
     "mermaid": "^11.14.0",
     "motion": "^12.23.24",
+    "mysql2": "^3.22.3",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.5",
     "openai": "^6.33.0",

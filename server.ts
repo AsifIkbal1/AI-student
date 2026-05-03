@@ -12,6 +12,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import firebaseConfig from "./firebase-applet-config.json" assert { type: "json" };
 import cron from "node-cron";
 import nodemailer from "nodemailer";
+import pool, { initMySQL } from "./src/lib/mysql.js";
 
 dotenv.config();
 
@@ -77,6 +78,9 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Initialize MySQL Database
+  await initMySQL();
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -255,6 +259,36 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     }
   });
 
+  // --- Auth MySQL Sync Endpoint ---
+  app.post("/api/auth/sync", async (req, res) => {
+    try {
+      const { uid, email, displayName, photoURL, isLogin } = req.body;
+      const userAgent = req.headers["user-agent"] || "Unknown";
+
+      // 1. Sync User (Insert or Update)
+      await pool.query(`
+        INSERT INTO users (uid, email, displayName, photoURL) 
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+        displayName = VALUES(displayName),
+        photoURL = VALUES(photoURL)
+      `, [uid, email, displayName, photoURL]);
+
+      // 2. If it's a login, record the login log
+      if (isLogin) {
+        await pool.query(`
+          INSERT INTO login_logs (uid, email, userAgent)
+          VALUES (?, ?, ?)
+        `, [uid, email, userAgent]);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error syncing auth to MySQL:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // --- Payment Routes ---
 
   // Stripe Session Initialization
@@ -371,6 +405,16 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         "subscription.active": true,
         credits: admin.firestore.FieldValue.increment(PLANS[planId as keyof typeof PLANS].credits)
       });
+
+      // Log to MySQL subscriptions
+      try {
+        await pool.query(`
+          INSERT INTO subscriptions (uid, planId, interval_period, paymentMethod)
+          VALUES (?, ?, ?, ?)
+        `, [userId, planId, interval, "sslcommerz"]);
+      } catch (mysqlError) {
+        console.error("MySQL Insert Error in SSLCommerz Success:", mysqlError);
+      }
     }
 
     res.redirect("/dashboard?payment=success");
@@ -425,6 +469,16 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
           status: "success",
           timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
+      }
+      
+      // Log to MySQL subscriptions
+      try {
+        await pool.query(`
+          INSERT INTO subscriptions (uid, planId, interval_period, amount, paymentMethod, transactionId)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `, [userId, planId, interval, session.amount_total! / 100, "stripe", session.id]);
+      } catch (mysqlError) {
+        console.error("MySQL Insert Error in Stripe Webhook:", mysqlError);
       }
     }
 
@@ -514,6 +568,16 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         "subscription.expiresAt": expiresAt.toISOString(),
         isApproved: true
       });
+
+      // Insert into MySQL subscriptions
+      try {
+        await pool.query(`
+          INSERT INTO subscriptions (uid, planId, interval_period, paymentMethod, transactionId)
+          VALUES (?, ?, ?, ?, ?)
+        `, [uid, planId, interval, "manual", paymentId]);
+      } catch (mysqlError) {
+        console.error("MySQL Insert Error:", mysqlError);
+      }
 
       res.json({ success: true });
     } catch (error: any) {

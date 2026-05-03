@@ -143,6 +143,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             setDoc(userDocRef, newProfile).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));
             setProfile(newProfile);
+
+            // Sync signup to MySQL
+            fetch("/api/auth/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || "Student",
+                photoURL: user.photoURL || "",
+                isLogin: false
+              })
+            }).catch(console.error);
           }
           setLoading(false);
         }, (error) => {
@@ -169,6 +182,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           timestamp: serverTimestamp(),
           userAgent: navigator.userAgent
         });
+
+        // Sync login to MySQL
+        fetch("/api/auth/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName || "Student",
+            photoURL: result.user.photoURL || "",
+            isLogin: true
+          })
+        }).catch(console.error);
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, "loginLogs");

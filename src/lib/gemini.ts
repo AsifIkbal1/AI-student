@@ -100,6 +100,23 @@ export async function logUsage(uid: string, tool: string, usage: any) {
       totalTokens: usage?.totalTokenCount || 0,
       timestamp: serverTimestamp(),
     });
+
+    // Sync to MySQL
+    fetch("/api/logs/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uid,
+        feature: tool,
+        action: "ai_generation",
+        details: {
+          promptTokens: usage?.promptTokenCount || 0,
+          candidatesTokens: usage?.candidatesTokenCount || 0,
+          totalTokens: usage?.totalTokenCount || 0
+        }
+      })
+    }).catch(console.error);
+
   } catch (error) {
     console.error("Error logging usage:", error);
   }

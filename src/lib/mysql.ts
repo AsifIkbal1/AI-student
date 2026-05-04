@@ -70,6 +70,19 @@ export async function initMySQL() {
       )
     `);
 
+    // Create activity logs table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        uid VARCHAR(255),
+        email VARCHAR(255),
+        feature VARCHAR(100),
+        action VARCHAR(100),
+        details TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     connection.release();
     console.log("MySQL Database initialized successfully.");
   } catch (error) {

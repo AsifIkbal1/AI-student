@@ -21,7 +21,11 @@ import {
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from "recharts";
 import { cn } from "../lib/utils";
 
@@ -41,6 +45,9 @@ export const AdminDashboard: React.FC = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [manualPayments, setManualPayments] = useState<any[]>([]);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   useEffect(() => {
     // Real-time stats
@@ -136,7 +143,20 @@ export const AdminDashboard: React.FC = () => {
       }
     };
 
+    const fetchAnalytics = async () => {
+      try {
+        const response = await fetch("/api/admin/analytics");
+        if (response.ok) {
+          const data = await response.json();
+          setAnalytics(data);
+        }
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+      }
+    };
+
     fetchManualPayments();
+    fetchAnalytics();
     const paymentInterval = setInterval(fetchManualPayments, 30000); // Auto refresh every 30s
 
     // Mock chart data
@@ -267,13 +287,71 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard title="Total Users" value={stats.totalUsers} icon={Users} trend="up" trendValue="12%" />
-        <StatCard title="Total API Credits" value={stats.totalApiCredits.toLocaleString()} icon={CreditCard} trend="up" trendValue="0%" />
-        <StatCard title="Credits Remaining" value={stats.remainingApiCredits.toLocaleString()} icon={Activity} trend="down" trendValue="15%" />
+        <StatCard title="Total Revenue" value={`৳${analytics?.totalRevenue || 0}`} icon={CreditCard} trend="up" trendValue="0%" />
+        <StatCard title="Total API Credits" value={stats.totalApiCredits.toLocaleString()} icon={Activity} trend="up" trendValue="0%" />
+        <StatCard title="Credits Remaining" value={stats.remainingApiCredits.toLocaleString()} icon={Clock} trend="down" trendValue="15%" />
       </div>
 
       <div className="grid grid-cols-1 gap-8 mb-10">
+        {analytics && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm lg:col-span-2">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">Daily Activity Trend</h3>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analytics.dailyUsage}>
+                    <defs>
+                      <linearGradient id="colorActions" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dx={-10} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      cursor={{ stroke: '#e5e7eb', strokeWidth: 2, strokeDasharray: '3 3' }}
+                    />
+                    <Area type="monotone" dataKey="actions" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorActions)" name="Total Actions" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">Top Features</h3>
+              <div className="h-[300px] w-full">
+                {analytics.topFeatures?.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={analytics.topFeatures}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {analytics.topFeatures.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">No activity data yet</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Manual Payment Requests Table */}
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-6">

@@ -289,6 +289,74 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     }
   });
 
+  // --- Feature Activity Logging Endpoint ---
+  app.post("/api/logs/activity", async (req, res) => {
+    try {
+      const { uid, email, feature, action, details } = req.body;
+      
+      // Ensure uid and feature are provided
+      if (!uid || !feature) {
+        return res.status(400).json({ error: "Missing required fields: uid or feature" });
+      }
+
+      await pool.query(`
+        INSERT INTO activity_logs (uid, email, feature, action, details)
+        VALUES (?, ?, ?, ?, ?)
+      `, [uid, email || null, feature, action || "used", details ? JSON.stringify(details) : null]);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error logging activity to MySQL:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Admin Analytics Endpoint ---
+  app.get("/api/admin/analytics", async (req, res) => {
+    try {
+      // 1. Total Revenue
+      const [revenueResult]: any = await pool.query(`
+        SELECT SUM(amount) as totalRevenue, COUNT(*) as totalSubscriptions 
+        FROM subscriptions
+      `);
+
+      // 2. Most Used Features (Top 5)
+      const [topFeaturesResult]: any = await pool.query(`
+        SELECT feature as name, COUNT(*) as value 
+        FROM activity_logs 
+        GROUP BY feature 
+        ORDER BY value DESC 
+        LIMIT 5
+      `);
+
+      // 3. Daily Usage (Last 7 Days)
+      const [dailyUsageResult]: any = await pool.query(`
+        SELECT DATE(timestamp) as date, COUNT(*) as actions, COUNT(DISTINCT uid) as uniqueUsers
+        FROM activity_logs
+        WHERE timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(timestamp)
+        ORDER BY date ASC
+      `);
+
+      // Format date for chart
+      const formattedDailyUsage = dailyUsageResult.map((row: any) => ({
+        date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        actions: row.actions,
+        users: row.uniqueUsers
+      }));
+
+      res.json({
+        totalRevenue: revenueResult[0].totalRevenue || 0,
+        totalSubscriptions: revenueResult[0].totalSubscriptions || 0,
+        topFeatures: topFeaturesResult,
+        dailyUsage: formattedDailyUsage
+      });
+    } catch (error: any) {
+      console.error("Admin Analytics Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // --- Payment Routes ---
 
   // Stripe Session Initialization
@@ -616,6 +684,19 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         accuracy: accuracy || null,
         timestamp: admin.firestore.FieldValue.serverTimestamp()
       });
+
+      // Log to MySQL
+      if (userId !== "guest") {
+        try {
+          await pool.query(`
+            INSERT INTO activity_logs (uid, feature, action, details)
+            VALUES (?, ?, ?, ?)
+          `, [userId, "NeuroTest", "completed_test", JSON.stringify({ testType, score, unit, accuracy })]);
+        } catch (mysqlErr) {
+          console.error("MySQL Insert Error in NeuroTest:", mysqlErr);
+        }
+      }
+
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error saving NeuroTest result:", error);
@@ -704,6 +785,19 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         memoryEnabled: memoryEnabled || false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+
+      // Log to MySQL
+      if (userId) {
+        try {
+          await pool.query(`
+            INSERT INTO activity_logs (uid, feature, action, details)
+            VALUES (?, ?, ?, ?)
+          `, [userId, "CortexStudio", "create_agent", JSON.stringify({ name, role })]);
+        } catch (mysqlErr) {
+          console.error("MySQL Insert Error in Cortex Agent:", mysqlErr);
+        }
+      }
+
       res.json({ id: docRef.id });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -893,6 +987,18 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         }
       }
 
+      // Log to MySQL
+      if (userId) {
+        try {
+          await pool.query(`
+            INSERT INTO activity_logs (uid, feature, action, details)
+            VALUES (?, ?, ?, ?)
+          `, [userId, "CortexStudio", "agent_chat", JSON.stringify({ agentId, prompt })]);
+        } catch (mysqlErr) {
+          console.error("MySQL Insert Error in Cortex Chat:", mysqlErr);
+        }
+      }
+
       res.write("data: [DONE]\n\n");
       res.end();
     } catch (error: any) {
@@ -932,6 +1038,19 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         status: "active",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+
+      // Log to MySQL
+      if (userId) {
+        try {
+          await pool.query(`
+            INSERT INTO activity_logs (uid, feature, action, details)
+            VALUES (?, ?, ?, ?)
+          `, [userId, "CortexStudio", "create_task", JSON.stringify({ title, agentId, schedule })]);
+        } catch (mysqlErr) {
+          console.error("MySQL Insert Error in Cortex Task:", mysqlErr);
+        }
+      }
+
       res.json({ id: docRef.id });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

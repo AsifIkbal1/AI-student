@@ -39,7 +39,7 @@ import { AIFlashcards } from "./components/AIFlashcards";
 import { StudyPlannerTracker } from "./components/StudyPlannerTracker";
 
 import { AISlideGenerator } from "./components/AISlideGenerator";
-import { ChatWithPDF } from "./components/ChatWithPDF";
+
 import { SmartStudyMode } from "./components/SmartStudyMode";
 import { CareerRoadmapGenerator } from "./components/CareerRoadmapGenerator";
 import { ZenPathAI } from "./components/ZenPathAI";
@@ -174,7 +174,7 @@ const App: React.FC = () => {
                 <Route path="/video-summarizer" element={<ProtectedRoute><AIVideoSummarizer /></ProtectedRoute>} />
                 <Route path="/code-helper" element={<ProtectedRoute><AICodeHelper /></ProtectedRoute>} />
                 <Route path="/slides" element={<ProtectedRoute><AISlideGenerator /></ProtectedRoute>} />
-                <Route path="/chat-pdf" element={<ProtectedRoute><ChatWithPDF /></ProtectedRoute>} />
+
                 <Route path="/smart-study" element={<ProtectedRoute><SmartStudyMode /></ProtectedRoute>} />
                 <Route path="/career-roadmap" element={<ProtectedRoute><CareerRoadmapGenerator /></ProtectedRoute>} />
                 <Route path="/tracker" element={<ProtectedRoute><StudyPlannerTracker /></ProtectedRoute>} />

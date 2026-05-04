@@ -98,7 +98,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: ShieldCheck, label: t("doubt_solver"), path: "/doubt-solver" },
     { icon: Code, label: t("code_helper"), path: "/code-helper" },
     { icon: Presentation, label: t("slides"), path: "/slides" },
-    { icon: FileSearch, label: t("chat_pdf"), path: "/chat-pdf" },
+
     { icon: Sparkles, label: t("smart_study"), path: "/smart-study" },
     { icon: Leaf, label: t("zenpath"), path: "/zenpath" },
     { icon: Compass, label: t("career_roadmap"), path: "/career-roadmap" },

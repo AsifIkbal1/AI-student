@@ -202,14 +202,7 @@ export const Dashboard: React.FC = () => {
       category: "Creation",
       badge: "New" as const
     },
-    {
-      icon: FileSearch,
-      title: t("chat_pdf"),
-      description: t("desc_pdf"),
-      path: "/chat-pdf",
-      color: "from-red-600 to-red-700",
-      category: "Tools"
-    },
+
     {
       icon: Sparkles,
       title: t("smart_study"),

@@ -41,19 +41,25 @@ import {
 
 type Category = "All" | "Study" | "Creation" | "Tools" | "Career";
 
-const FeatureCard = ({ icon: Icon, title, description, path, color, theme, badge }: { icon: any, title: string, description: string, path: string, color: string, theme: string, badge?: "Popular" | "New" }) => (
-  <Link to={path}>
+const FeatureCard = ({ icon: Icon, title, description, path, color, theme, badge, isLocked }: { icon: any, title: string, description: string, path: string, color: string, theme: string, badge?: "Popular" | "New", isLocked?: boolean }) => {
+  const content = (
     <motion.div 
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ y: -10, scale: 1.02 }}
+      whileHover={isLocked ? {} : { y: -10, scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={cn(
         "p-6 rounded-3xl transition-all h-full flex flex-col relative overflow-hidden group cursor-pointer",
-        theme === 'dark' ? "glass-panel" : "glass-panel hover:shadow-xl hover:shadow-blue-500/10"
+        theme === 'dark' ? "glass-panel" : "glass-panel hover:shadow-xl hover:shadow-blue-500/10",
+        isLocked && "opacity-80 grayscale-[0.5]"
       )}
+      onClick={() => {
+        if (isLocked) {
+          alert("💎 Premium Feature: Please upgrade to the Premium plan to access Cortex Studio.");
+        }
+      }}
     >
       {badge && (
         <span className={cn(
@@ -65,17 +71,25 @@ const FeatureCard = ({ icon: Icon, title, description, path, color, theme, badge
           {badge}
         </span>
       )}
+      {isLocked && (
+        <span className="absolute top-5 right-5 bg-indigo-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-lg z-20">
+          <ShieldCheck size={12} /> Premium
+        </span>
+      )}
       <div className={cn(`p-3.5 rounded-2xl w-fit mb-5 text-white shadow-lg bg-gradient-to-br`, color)}>
         <Icon size={26} />
       </div>
       <h3 className={cn("text-xl font-bold mb-2 group-hover:text-blue-600 transition-colors", theme === 'dark' ? "text-white group-hover:text-blue-400" : "text-gray-900")}>{title}</h3>
       <p className={cn("text-sm mb-6 flex-1 font-medium leading-relaxed", theme === 'dark' ? "text-gray-300" : "text-gray-600")}>{description}</p>
       <div className="flex items-center text-blue-600 text-sm font-bold mt-auto group-hover:translate-x-2 transition-transform">
-        {path === "/dashboard" ? "View" : "Get Started"} →
+        {isLocked ? "Upgrade Now" : (path === "/dashboard" ? "View" : "Get Started")} →
       </div>
     </motion.div>
-  </Link>
-);
+  );
+
+  return isLocked ? content : <Link to={path}>{content}</Link>;
+};
+
 
 export const Dashboard: React.FC = () => {
   const { profile } = useAuth();
@@ -349,7 +363,7 @@ export const Dashboard: React.FC = () => {
           <AnimatePresence>
             {filteredFeatures.length > 0 ? (
               filteredFeatures.map((feature) => (
-                <FeatureCard key={feature.title} {...feature} theme={theme} />
+                <FeatureCard key={feature.title} {...feature} theme={theme} isLocked={feature.title === t("cortex_studio") && profile?.subscription?.plan !== "premium" && profile?.role !== "admin"} />
               ))
             ) : (
               <div className="col-span-full py-20 text-center">

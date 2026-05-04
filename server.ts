@@ -122,6 +122,27 @@ async function startServer() {
     return new GoogleGenAI({ apiKey: key });
   };
 
+  
+  // Helper to check if user is Premium or Admin
+  const checkPremiumAccess = async (uid: string) => {
+    if (!uid) return false;
+    try {
+      // 1. Check if Admin via MySQL
+      const [userRows]: any = await pool.query('SELECT role FROM users WHERE uid = ?', [uid]);
+      if (userRows.length > 0 && userRows[0].role === 'admin') return true;
+
+      // 2. Check latest Premium subscription in MySQL
+      const [subRows]: any = await pool.query(
+        'SELECT planId FROM subscriptions WHERE uid = ? ORDER BY timestamp DESC LIMIT 1',
+        [uid]
+      );
+      return subRows.length > 0 && subRows[0].planId === 'premium';
+    } catch (err) {
+      console.error("Error checking premium access:", err);
+      return false;
+    }
+  };
+
   const MODELS = {
     GPT4: "gpt-4o-mini",
     GPT3: "gpt-4o-mini",
@@ -365,6 +386,7 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       const [topFeaturesResult]: any = await pool.query(`
         SELECT feature as name, COUNT(*) as value 
         FROM activity_logs 
+        WHERE feature != 'ChatWithPDF'
         GROUP BY feature 
         ORDER BY value DESC 
         LIMIT 5
@@ -397,8 +419,6 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       res.status(500).json({ error: error.message });
     }
   });
-
-  // --- Admin User Management & Audit APIs ---
 
   app.get("/api/admin/users", async (req, res) => {
     try {
@@ -921,6 +941,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
 
   // Agents CRUD
   app.get("/api/cortex/agents", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId } = req.query;
     if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
 
@@ -934,6 +959,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   });
 
   app.post("/api/cortex/agents", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId, name, role, instructions, tools, memoryEnabled } = req.body;
     if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
 
@@ -980,6 +1010,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
 
   // Settings CRUD
   app.get("/api/cortex/settings", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId } = req.query;
     if (!cortexSettings) return res.status(500).json({ error: "Database not initialized" });
 
@@ -992,6 +1027,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   });
 
   app.post("/api/cortex/settings", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId, smtpHost, smtpPort, smtpUser, smtpPass } = req.body;
     if (!cortexSettings) return res.status(500).json({ error: "Database not initialized" });
 
@@ -1048,6 +1088,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
 
   // Update Streaming Chat with Notification Tool Support
   app.post("/api/cortex/chat/stream", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId, agentId, prompt, history } = req.body;
     if (!cortexAgents) return res.status(500).json({ error: "Database not initialized" });
 
@@ -1174,6 +1219,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
 
   // Tasks CRUD
   app.get("/api/cortex/tasks", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId } = req.query;
     if (!cortexTasks) return res.status(500).json({ error: "Database not initialized" });
 
@@ -1187,6 +1237,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   });
 
   app.post("/api/cortex/tasks", async (req, res) => {
+    const uid = (req.query.userId || req.body.userId || req.body.uid) as string;
+    if (!(await checkPremiumAccess(uid))) {
+      return res.status(403).json({ error: "Premium subscription required to use Cortex Studio features." });
+    }
+
     const { userId, agentId, title, schedule, action } = req.body;
     if (!cortexTasks) return res.status(500).json({ error: "Database not initialized" });
 

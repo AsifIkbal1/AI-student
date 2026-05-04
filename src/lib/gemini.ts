@@ -17,9 +17,9 @@ function checkApiKey() {
 }
 
 export const MODELS = {
-  FLASH: "gemini-3-flash-preview",
-  PRO: "gemini-3.1-pro-preview",
-  IMAGE: "gemini-2.5-flash-image",
+  FLASH: "gemini-1.5-flash",
+  PRO: "gemini-1.5-pro",
+  IMAGE: "gemini-1.5-flash",
 };
 
 export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
@@ -199,10 +199,10 @@ export async function chatWithPDF(prompt: string, fileData: { data: string, mime
   if (fileData && fileData.data) {
     userParts.push({ inlineData: fileData });
   }
-  userParts.push({ text: `You are a PDF Assistant. Answer the user's question based ONLY on the provided document. If the answer is not in the document, say you don't know.\n\nQuestion: ${prompt}` });
+  userParts.push({ text: prompt });
 
   const response = await ai.models.generateContent({
-    model: MODELS.FLASH,
+    model: MODELS.PRO,
     contents: [
       ...history,
       {
@@ -211,7 +211,7 @@ export async function chatWithPDF(prompt: string, fileData: { data: string, mime
       }
     ],
     config: {
-      systemInstruction: "You are a specialized PDF bot. Your knowledge is strictly limited to the uploaded document. Be precise and helpful.",
+      systemInstruction: "You are a PDF Assistant. Your knowledge is strictly limited to the provided document and any text content provided as 'Context from PDF'. Be precise, academic, and helpful. If the answer is not in the document or context, say you don't know.",
     },
   });
   return { text: response.text, usage: response.usageMetadata };

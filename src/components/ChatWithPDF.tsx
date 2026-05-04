@@ -99,13 +99,13 @@ export const ChatWithPDF: React.FC = () => {
         }));
       
       const isFirstUserMessage = messages.filter(m => m.role === "user").length === 0;
-      const promptWithContext = (file.extractedText && isFirstUserMessage)
+      const promptWithContext = file.extractedText 
         ? `Context from PDF:\n${file.extractedText}\n\nQuestion: ${input}`
         : input;
 
       const { text, usage } = await chatWithPDF(
         promptWithContext, 
-        { data: file.mimeType.startsWith("image/") ? file.data : "", mimeType: file.mimeType }, 
+        { data: file.data, mimeType: file.mimeType }, 
         history
       );
       setMessages((prev) => [...prev, { role: "model", text: text || "I'm sorry, I couldn't process that." }]);

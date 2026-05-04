@@ -138,8 +138,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               { icon: Shield, title: "Privacy Policy", link: "/policy/privacy", color: "text-blue-600", bg: "bg-blue-50" },
-              { icon: FileText, title: "Terms & Conditions", link: "/policy/terms", color: "text-purple-600", bg: "bg-purple-50" },
-              { icon: RefreshCw, title: "Refund Policy", link: "/policy/refund", color: "text-emerald-600", bg: "bg-emerald-50" },
+              { icon: FileText, title: "Terms of Service", link: "/policy/terms", color: "text-purple-600", bg: "bg-purple-50" },
               { icon: Mail, title: "Contact Us", link: "/policy/contact", color: "text-pink-600", bg: "bg-pink-50" }
             ].map((item, idx) => (
               <Link 
@@ -171,7 +170,6 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-8 text-sm font-bold text-gray-600">
             <Link to="/policy/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
             <Link to="/policy/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
-            <Link to="/policy/refund" className="hover:text-blue-600 transition-colors">Refund</Link>
             <Link to="/policy/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
           </div>
 

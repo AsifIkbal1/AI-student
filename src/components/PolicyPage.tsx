@@ -15,26 +15,32 @@ const policyContent = {
         <section>
           <h3 className="text-xl font-bold text-gray-900 mb-3">1. Information We Collect</h3>
           <p className="text-gray-600 leading-relaxed">
-            We collect information you provide directly to us when you create an account, update your profile, or use our AI services. This includes your name, email address, and the academic content you process through our AI tools.
+            We collect personal information that you voluntarily provide to us when you register on the platform. This includes your name, email address, and profile picture provided via Google or Email authentication. We also track usage data, including the number of API tokens consumed and the specific AI tools utilized, to improve our service delivery.
           </p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">2. How We Use Your Information</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">2. How We Use Your Data</h3>
           <p className="text-gray-600 leading-relaxed">
-            We use the information to provide, maintain, and improve our services, develop new features, and protect AI Students and our users. Your academic data is used solely to provide personalized AI responses and is not shared with third parties for marketing.
+            Your information is used to personalize your learning experience, manage your subscription status, and calculate referral rewards. We utilize your AI prompts to generate responses via Google Gemini and OpenAI. Please note that while we log usage for administrative purposes, we do not sell your personal data to third-party advertisers.
           </p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Data Security</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Data Security & Sovereignty</h3>
           <p className="text-gray-600 leading-relaxed">
-            We use industry-standard encryption and security measures to protect your personal information and academic data from unauthorized access, disclosure, or destruction.
+            We prioritize the security of your data. While authentication is handled securely by Firebase, your detailed usage logs and platform activity are stored in our private local database to ensure data sovereignty. We implement industry-standard encryption to protect your information from unauthorized access.
+          </p>
+        </section>
+        <section>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">4. Third-Party Services</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Our platform interacts with third-party AI providers (Google and OpenAI) to process your academic requests. These providers receive only the data necessary to generate a response and are subject to their own privacy protocols.
           </p>
         </section>
       </div>
     )
   },
   terms: {
-    title: "Terms & Conditions",
+    title: "Terms of Service",
     icon: FileText,
     color: "text-purple-600",
     bgColor: "bg-purple-50",
@@ -43,47 +49,25 @@ const policyContent = {
         <section>
           <h3 className="text-xl font-bold text-gray-900 mb-3">1. Acceptance of Terms</h3>
           <p className="text-gray-600 leading-relaxed">
-            By accessing or using AI Students, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.
+            By creating an account on AI Students, you agree to abide by these Terms of Service. If you do not agree with any part of these terms, you are prohibited from using the service.
           </p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">2. Use of Service</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">2. Subscription & No-Refund Policy</h3>
           <p className="text-gray-600 leading-relaxed">
-            You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. The AI-generated content is for educational purposes and should be verified for academic accuracy.
+            Access to premium features requires a paid subscription. Since our service provides immediate digital value and AI processing costs are incurred instantly, <strong>all payments are final and non-refundable</strong>. For manual payments (bKash/Nagad), access will be granted only after successful verification by our administration team.
           </p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Intellectual Property</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Acceptable Use of AI</h3>
           <p className="text-gray-600 leading-relaxed">
-            The service and its original content, features, and functionality are and will remain the exclusive property of AI Students and its licensors.
-          </p>
-        </section>
-      </div>
-    )
-  },
-  refund: {
-    title: "Refund Policy",
-    icon: RefreshCw,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-    content: (
-      <div className="space-y-6">
-        <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">1. Subscription Refunds</h3>
-          <p className="text-gray-600 leading-relaxed">
-            We offer a 7-day money-back guarantee for our premium subscriptions if you are not satisfied with the service. To request a refund, please contact our support team.
+            The AI-generated content provided by our tools (AITutor, NeuroTest, etc.) is intended for educational assistance and supplementary learning. Users are responsible for verifying the accuracy of AI outputs for their academic requirements. Abuse of the system through automated bots or scripts may lead to immediate account suspension.
           </p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">2. Processing Refunds</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">4. Account Termination</h3>
           <p className="text-gray-600 leading-relaxed">
-            Once approved, refunds are processed within 5-10 business days and will be credited back to your original payment method (Stripe or SSLCommerz).
-          </p>
-        </section>
-        <section>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">3. Non-Refundable Items</h3>
-          <p className="text-gray-600 leading-relaxed">
-            Usage-based charges or promotional credits are generally non-refundable unless required by law.
+            We reserve the right to suspend or terminate any account that violates our terms, engages in fraudulent activities, or attempts to circumvent our payment or security systems. In the event of a ban, no refunds for remaining subscription time will be provided.
           </p>
         </section>
       </div>

@@ -370,7 +370,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <div className="flex flex-wrap justify-center gap-6 text-xs font-bold uppercase tracking-wider">
               <Link to="/policy/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
               <Link to="/policy/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
-              <Link to="/policy/refund" className="hover:text-blue-600 transition-colors">Refund</Link>
               <Link to="/policy/contact" className="hover:text-blue-600 transition-colors">Contact Us</Link>
             </div>
 

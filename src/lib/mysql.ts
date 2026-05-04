@@ -38,9 +38,22 @@ export async function initMySQL() {
         displayName VARCHAR(255),
         photoURL TEXT,
         role ENUM('user', 'admin') DEFAULT 'user',
+        status ENUM('active', 'banned') DEFAULT 'active',
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Safely add status column if it doesn't exist (for existing databases)
+    try {
+      await connection.query(`
+        ALTER TABLE users ADD COLUMN status ENUM('active', 'banned') DEFAULT 'active'
+      `);
+    } catch (e: any) {
+      // Ignore error if column already exists (Error 1060: Duplicate column name)
+      if (e.code !== 'ER_DUP_FIELDNAME') {
+        console.error("Error adding status column:", e);
+      }
+    }
 
     // Create login logs table
     await connection.query(`

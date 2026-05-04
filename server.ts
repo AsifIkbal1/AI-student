@@ -282,7 +282,12 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         `, [uid, email, userAgent]);
       }
 
-      res.json({ success: true });
+      // 3. Fetch current status and role
+      const [rows]: any = await pool.query(`SELECT status, role FROM users WHERE uid = ?`, [uid]);
+      const userStatus = rows.length > 0 ? rows[0].status : 'active';
+      const userRole = rows.length > 0 ? rows[0].role : 'user';
+
+      res.json({ success: true, status: userStatus, role: userRole });
     } catch (error: any) {
       console.error("Error syncing auth to MySQL:", error);
       res.status(500).json({ error: error.message });
@@ -356,6 +361,92 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       res.status(500).json({ error: error.message });
     }
   });
+
+  // --- Admin User Management & Audit APIs ---
+
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const [users]: any = await pool.query(`
+        SELECT uid, email, displayName, photoURL, role, status, createdAt 
+        FROM users 
+        ORDER BY createdAt DESC
+      `);
+      res.json(users);
+    } catch (error: any) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/users/:uid/ban", async (req, res) => {
+    try {
+      await pool.query(`UPDATE users SET status = 'banned' WHERE uid = ?`, [req.params.uid]);
+      res.json({ success: true, status: 'banned' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/users/:uid/unban", async (req, res) => {
+    try {
+      await pool.query(`UPDATE users SET status = 'active' WHERE uid = ?`, [req.params.uid]);
+      res.json({ success: true, status: 'active' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/users/:uid/role", async (req, res) => {
+    try {
+      const { role } = req.body;
+      if (role !== 'admin' && role !== 'user') return res.status(400).json({ error: "Invalid role" });
+      await pool.query(`UPDATE users SET role = ? WHERE uid = ?`, [role, req.params.uid]);
+      res.json({ success: true, role });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
+  app.get("/api/admin/audit-logs", async (req, res) => {
+    try {
+      const [logs]: any = await pool.query(`
+        SELECT id, uid, email, feature, action, details, timestamp 
+        FROM activity_logs 
+        ORDER BY timestamp DESC 
+        LIMIT 100
+      `);
+      res.json(logs);
+    } catch (error: any) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/backup", async (req, res) => {
+    try {
+      const [users] = await pool.query(`SELECT * FROM users`);
+      const [subscriptions] = await pool.query(`SELECT * FROM subscriptions`);
+      const [logs] = await pool.query(`SELECT * FROM activity_logs`);
+      
+      const backupData = {
+        timestamp: new Date().toISOString(),
+        tables: {
+          users,
+          subscriptions,
+          activity_logs: logs
+        }
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename="database_backup.json"');
+      res.send(JSON.stringify(backupData, null, 2));
+    } catch (error: any) {
+      console.error("Error generating backup:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
   // --- Payment Routes ---
 

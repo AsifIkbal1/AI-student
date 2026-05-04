@@ -183,8 +183,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           userAgent: navigator.userAgent
         });
 
-        // Sync login to MySQL
-        fetch("/api/auth/sync", {
+        // Sync login to MySQL and check ban status
+        const syncRes = await fetch("/api/auth/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -194,7 +194,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: result.user.photoURL || "",
             isLogin: true
           })
-        }).catch(console.error);
+        });
+        
+        if (syncRes.ok) {
+          const syncData = await syncRes.json();
+          if (syncData.status === 'banned') {
+            await signOut(auth);
+            alert("Your account has been suspended by the administrator.");
+            return;
+          }
+        }
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, "loginLogs");

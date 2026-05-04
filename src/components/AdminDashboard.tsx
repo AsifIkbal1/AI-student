@@ -46,15 +46,44 @@ export const AdminDashboard: React.FC = () => {
   const [manualPayments, setManualPayments] = useState<any[]>([]);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'audit'>('overview');
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+  const handleBanUser = async (uid: string, currentStatus: string) => {
+    const action = currentStatus === 'banned' ? 'unban' : 'ban';
+    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+    try {
+      const res = await fetch(`/api/admin/users/${uid}/${action}`, { method: 'POST' });
+      if (res.ok) {
+        setUsers(users.map(u => u.uid === uid ? { ...u, status: action === 'ban' ? 'banned' : 'active' } : u));
+      }
+    } catch (err) {
+      console.error(`Error trying to ${action} user:`, err);
+    }
+  };
+
+  const handleRoleChange = async (uid: string, currentRole: string) => {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    if (!window.confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
+    try {
+      const res = await fetch(`/api/admin/users/${uid}/role`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      });
+      if (res.ok) {
+        setUsers(users.map(u => u.uid === uid ? { ...u, role: newRole } : u));
+      }
+    } catch (err) {
+      console.error("Error changing role:", err);
+    }
+  };
+
   useEffect(() => {
     // Real-time stats
-    const unsubscribeUsers = onSnapshot(collection(db, "users"), (snap) => {
-      setStats(prev => ({ ...prev, totalUsers: snap.size }));
-      setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    const unsubscribeUsers = () => {}; // Firebase users listener removed in favor of MySQL
 
     const unsubscribeConfig = onSnapshot(doc(db, "system", "config"), (snap) => {
       if (snap.exists()) {
@@ -155,8 +184,30 @@ export const AdminDashboard: React.FC = () => {
       }
     };
 
+    const fetchAdminData = async () => {
+      try {
+        const [usersRes, logsRes] = await Promise.all([
+          fetch("/api/admin/users"),
+          fetch("/api/admin/audit-logs")
+        ]);
+        
+        if (usersRes.ok) {
+          const data = await usersRes.json();
+          setUsers(data);
+          setStats(prev => ({ ...prev, totalUsers: data.length }));
+        }
+        
+        if (logsRes.ok) {
+          setAuditLogs(await logsRes.json());
+        }
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+      }
+    };
+
     fetchManualPayments();
     fetchAnalytics();
+    fetchAdminData();
     const paymentInterval = setInterval(fetchManualPayments, 30000); // Auto refresh every 30s
 
     // Mock chart data
@@ -272,20 +323,53 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 lg:p-8">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-500">Monitor platform performance and user activity</p>
         </div>
-        <div className="relative w-full md:w-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search users..." 
-            className="w-full md:w-64 bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button 
+            onClick={() => window.open('/api/admin/backup', '_blank')}
+            className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-gray-800 transition-colors whitespace-nowrap"
+          >
+            Download Backup
+          </button>
+          <div className="relative w-full md:w-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search users..." 
+              className="w-full md:w-64 bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
       </header>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-4 border-b border-gray-200 mb-8 overflow-x-auto pb-2">
+        <button 
+          onClick={() => setActiveTab('overview')}
+          className={cn("pb-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors", activeTab === 'overview' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")}
+        >
+          Overview & Stats
+        </button>
+        <button 
+          onClick={() => setActiveTab('users')}
+          className={cn("pb-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors", activeTab === 'users' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")}
+        >
+          User Management
+        </button>
+        <button 
+          onClick={() => setActiveTab('audit')}
+          className={cn("pb-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors", activeTab === 'audit' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")}
+        >
+          Audit Logs
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard title="Total Users" value={stats.totalUsers} icon={Users} trend="up" trendValue="12%" />
@@ -434,7 +518,10 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      </>
+      )}
 
+      {activeTab === 'users' && (
       <div className="grid grid-cols-1 gap-8 mb-10">
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
           <div className="flex justify-between items-center mb-6">
@@ -447,17 +534,17 @@ export const AdminDashboard: React.FC = () => {
                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
                   <th className="pb-4 px-4">User</th>
                   <th className="pb-4 px-4">Role</th>
-                  <th className="pb-4 px-4">Credits</th>
+                  <th className="pb-4 px-4">Joined</th>
                   <th className="pb-4 px-4">Status</th>
                   <th className="pb-4 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {users.map((user) => (
-                  <tr key={user.id} className="text-sm hover:bg-gray-50 transition-colors">
+                  <tr key={user.uid} className="text-sm hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
-                        <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />
+                        {user.photoURL && <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />}
                         <div>
                           <p className="font-semibold text-gray-900">{user.displayName}</p>
                           <p className="text-xs text-gray-500">{user.email}</p>
@@ -472,49 +559,36 @@ export const AdminDashboard: React.FC = () => {
                         {user.role}
                       </span>
                     </td>
-                    <td className="py-4 px-4 font-bold text-gray-700">{user.credits}</td>
+                    <td className="py-4 px-4 text-xs text-gray-500">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
                     <td className="py-4 px-4">
-                      <div className="flex flex-col gap-1">
-                        <span className={cn(
-                          "px-2 py-1 rounded-full text-[10px] font-bold uppercase w-fit",
-                          user.isBlocked ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
-                        )}>
-                          {user.isBlocked ? "Blocked" : "Active"}
-                        </span>
-                        <span className={cn(
-                          "px-2 py-1 rounded-full text-[10px] font-bold uppercase w-fit",
-                          user.isApproved ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                        )}>
-                          {user.isApproved ? "Approved" : "Pending"}
-                        </span>
-                      </div>
+                      <span className={cn(
+                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase w-fit",
+                        user.status === 'banned' ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                      )}>
+                        {user.status || 'Active'}
+                      </span>
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex gap-2 justify-end">
                         <button
-                          onClick={() => toggleApproveUser(user.id, !!user.isApproved)}
+                          onClick={() => handleRoleChange(user.uid, user.role)}
+                          className="px-4 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"
+                        >
+                          {user.role === 'admin' ? 'Make User' : 'Make Admin'}
+                        </button>
+                        <button
+                          onClick={() => handleBanUser(user.uid, user.status)}
                           className={cn(
-                            "px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1",
-                            user.isApproved 
-                              ? "bg-amber-100 text-amber-600 hover:bg-amber-200" 
-                              : "bg-emerald-600 text-white hover:bg-emerald-700"
+                            "px-4 py-1.5 rounded-xl text-xs font-bold transition-all",
+                            user.status === 'banned' 
+                              ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" 
+                              : "bg-red-50 text-red-600 hover:bg-red-100"
                           )}
                         >
-                          {user.isApproved ? "Revoke Access" : "Approve Access"}
+                          {user.status === 'banned' ? "Unban" : "Ban"}
                         </button>
-                        {user.role !== "admin" && (
-                          <button
-                            onClick={() => toggleBlockUser(user.id, !!user.isBlocked)}
-                            className={cn(
-                              "px-4 py-1.5 rounded-xl text-xs font-bold transition-all",
-                              user.isBlocked 
-                                ? "bg-emerald-50 text-emerald-600" 
-                                : "bg-red-600 text-white hover:bg-red-700"
-                            )}
-                          >
-                            {user.isBlocked ? "Unblock" : "Block"}
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -524,6 +598,40 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
+
+      {activeTab === 'audit' && (
+      <div className="grid grid-cols-1 gap-8 mb-10">
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Audit Logs</h3>
+            <span className="text-xs font-medium text-gray-400">{auditLogs.length} Records</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                  <th className="pb-4 px-4">User</th>
+                  <th className="pb-4 px-4">Feature</th>
+                  <th className="pb-4 px-4">Action</th>
+                  <th className="pb-4 px-4">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {auditLogs.map((log: any) => (
+                  <tr key={log.id} className="text-sm hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 font-medium text-gray-900">{log.email || log.uid}</td>
+                    <td className="py-4 px-4 text-blue-600 font-semibold">{log.feature}</td>
+                    <td className="py-4 px-4 text-gray-600">{log.action}</td>
+                    <td className="py-4 px-4 text-gray-400 text-xs">{new Date(log.timestamp).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">

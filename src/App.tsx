@@ -53,8 +53,6 @@ import { SupportPage } from "./components/SupportPage";
 import { ReferralPage } from "./components/ReferralPage";
 
 
-import { VerifyEmail } from "./components/VerifyEmail";
-
 const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: boolean }> = ({ children, requireAccess = true }) => {
   const { user, profile, loading } = useAuth();
   const { theme } = useTheme();
@@ -72,10 +70,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: bool
 
   if (!user) {
     return <Navigate to="/" />;
-  }
-
-  if (profile && !profile.isActivated && profile.role !== "admin") {
-    return <VerifyEmail />;
   }
 
   if (requireAccess && profile) {

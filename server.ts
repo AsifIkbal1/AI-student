@@ -286,18 +286,29 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   });
 
   // --- Auth MySQL Sync Endpoint ---
+  // System Email Transporter
+  const systemTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "465"),
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
   app.post("/api/auth/sync", async (req, res) => {
     try {
       const { uid, email, displayName, photoURL, isLogin, referredBy } = req.body;
       const userAgent = req.headers["user-agent"] || "Unknown";
 
       // Check if user exists
-      const [existingUsers]: any = await pool.query(`SELECT referral_code, referred_by FROM users WHERE uid = ?`, [uid]);
+      const [existingUsers]: any = await pool.query(`SELECT referral_code, referred_by, is_activated FROM users WHERE uid = ?`, [uid]);
       let referralCode = existingUsers.length > 0 ? existingUsers[0].referral_code : null;
-      let finalReferredBy = existingUsers.length > 0 ? null : (referredBy || null); // Only set referredBy on first sync
+      let finalReferredBy = existingUsers.length > 0 ? null : (referredBy || null);
+      let isActivated = existingUsers.length > 0 ? existingUsers[0].is_activated : 0;
 
       if (!referralCode) {
-        // Generate a referral code based on email or random string
         referralCode = (email.split('@')[0] + Math.floor(Math.random() * 10000)).substring(0, 50);
       }
 
@@ -319,14 +330,71 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       }
 
       // 3. Fetch current status and role
-      const [rows]: any = await pool.query(`SELECT status, role FROM users WHERE uid = ?`, [uid]);
+      const [rows]: any = await pool.query(`SELECT status, role, is_activated FROM users WHERE uid = ?`, [uid]);
       const userStatus = rows.length > 0 ? rows[0].status : 'active';
       const userRole = rows.length > 0 ? rows[0].role : 'user';
+      isActivated = rows.length > 0 ? rows[0].is_activated : 0;
 
-      res.json({ success: true, status: userStatus, role: userRole });
+      res.json({ success: true, status: userStatus, role: userRole, isActivated: !!isActivated });
     } catch (error: any) {
       console.error("Error syncing auth to MySQL:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Activation Endpoints ---
+  app.post("/api/auth/send-activation", async (req, res) => {
+    try {
+      const { uid, email } = req.body;
+      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      await pool.query(`UPDATE users SET activation_token = ? WHERE uid = ?`, [token, uid]);
+      
+      const activationLink = `${req.headers.origin}/activate?token=${token}`;
+      
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        await systemTransporter.sendMail({
+          from: `"AI Students" <${process.env.SMTP_USER}>`,
+          to: email,
+          subject: "Activate Your AI Students Account",
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 500px;">
+              <h2 style="color: #2563eb;">Activate Your Account</h2>
+              <p>Welcome to AI Students! Please click the button below to activate your account and start your learning journey.</p>
+              <a href="${activationLink}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">Activate Account</a>
+              <p style="font-size: 12px; color: #666;">If the button doesn't work, copy and paste this link: ${activationLink}</p>
+            </div>
+          `
+        });
+      }
+      
+      res.json({ success: true, link: activationLink }); // Link returned for testing/admin convenience
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/auth/activate", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token) return res.status(400).send("Invalid token");
+      
+      const [rows]: any = await pool.query(`SELECT uid FROM users WHERE activation_token = ?`, [token]);
+      if (rows.length === 0) return res.status(400).send("Invalid or expired token");
+      
+      await pool.query(`UPDATE users SET is_activated = 1, activation_token = NULL WHERE activation_token = ?`, [token]);
+      
+      res.send(`
+        <html>
+          <body style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center;">
+            <h1 style="color: #2563eb;">Account Activated!</h1>
+            <p>Your account has been successfully activated. You can now close this window and go back to the app.</p>
+            <script>setTimeout(() => window.location.href = '/', 3000);</script>
+          </body>
+        </html>
+      `);
+    } catch (error: any) {
+      res.status(500).send("Activation failed: " + error.message);
     }
   });
 

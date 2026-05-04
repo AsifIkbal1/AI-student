@@ -79,6 +79,7 @@ interface UserProfile {
   };
   isBlocked?: boolean;
   isApproved?: boolean;
+  isActivated?: boolean;
   createdAt: string;
 }
 
@@ -121,8 +122,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Update local state immediately so UI reflects the change
               setProfile({ ...data, photoURL: user.photoURL || data.photoURL, displayName: user.displayName || data.displayName });
             } else {
-              setProfile(data);
-            }
+              // Update local state immediately so UI reflects the change
+            setProfile({ ...data, photoURL: user.photoURL || data.photoURL, displayName: user.displayName || data.displayName });
+            
+            // Sync with MySQL to get latest activation/ban status
+            fetch("/api/auth/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || "Student",
+                photoURL: user.photoURL || "",
+                isLogin: false
+              })
+            })
+            .then(res => res.json())
+            .then(syncData => {
+              setProfile(prev => prev ? { ...prev, isActivated: syncData.isActivated } : null);
+            })
+            .catch(console.error);
+
           } else {
             // Create profile if it doesn't exist
             const newProfile: UserProfile = {
@@ -139,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               },
               isBlocked: false,
               isApproved: false,
+              isActivated: false,
               createdAt: new Date().toISOString(),
             };
             setDoc(userDocRef, newProfile).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));
@@ -203,6 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             alert("Your account has been suspended by the administrator.");
             return;
           }
+          setProfile(prev => prev ? { ...prev, isActivated: syncData.isActivated } : null);
         }
       }
     } catch (error) {

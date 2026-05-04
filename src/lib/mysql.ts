@@ -69,6 +69,19 @@ export async function initMySQL() {
       }
     }
 
+    // Safely add activation columns
+    try {
+      await connection.query(`
+        ALTER TABLE users 
+        ADD COLUMN is_activated TINYINT(1) DEFAULT 0,
+        ADD COLUMN activation_token VARCHAR(255)
+      `);
+    } catch (e: any) {
+      if (e.code !== 'ER_DUP_FIELDNAME') {
+        console.error("Error adding activation columns:", e);
+      }
+    }
+
     // Create support tickets table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS support_tickets (

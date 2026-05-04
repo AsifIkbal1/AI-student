@@ -51,6 +51,16 @@
 
 /* Gradient Mesh & Glassmorphism */
 .bg-gradient-mesh {
+  position: relative;
+  background-color: transparent !important;
+}
+
+.bg-gradient-mesh::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-color: #f8fafc;
   background-image: 
     radial-gradient(at 40% 20%, hsla(228,100%,74%,0.4) 0px, transparent 50%),
@@ -60,10 +70,9 @@
     radial-gradient(at 0% 100%, hsla(22,100%,77%,0.4) 0px, transparent 50%),
     radial-gradient(at 80% 100%, hsla(242,100%,70%,0.4) 0px, transparent 50%),
     radial-gradient(at 0% 0%, hsla(343,100%,76%,0.4) 0px, transparent 50%);
-  background-attachment: fixed;
 }
 
-.dark .bg-gradient-mesh {
+.dark .bg-gradient-mesh::before {
   background-color: #0f172a;
   background-image: 
     radial-gradient(at 40% 20%, hsla(228,100%,24%,0.4) 0px, transparent 50%),
@@ -73,7 +82,6 @@
     radial-gradient(at 0% 100%, hsla(22,100%,17%,0.4) 0px, transparent 50%),
     radial-gradient(at 80% 100%, hsla(242,100%,20%,0.4) 0px, transparent 50%),
     radial-gradient(at 0% 0%, hsla(343,100%,16%,0.4) 0px, transparent 50%);
-  background-attachment: fixed;
 }
 
 .glass-panel {
@@ -81,6 +89,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.6);
+  will-change: transform;
 }
 
 .dark .glass-panel {

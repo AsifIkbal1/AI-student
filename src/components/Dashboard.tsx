@@ -106,10 +106,12 @@ export const Dashboard: React.FC = () => {
         counts[tool] = (counts[tool] || 0) + 1;
       });
 
-      const formattedData = Object.keys(counts).map(tool => ({
-        name: tool.replace(/([A-Z])/g, ' $1').trim(), // Add spaces for readability
-        count: counts[tool]
-      })).sort((a, b) => b.count - a.count);
+      const formattedData = Object.keys(counts)
+        .filter(tool => !["ChatWithPDF"].includes(tool)) // Filter out deprecated tools
+        .map(tool => ({
+          name: tool.replace(/([A-Z])/g, ' $1').trim(), // Add spaces for readability
+          count: counts[tool]
+        })).sort((a, b) => b.count - a.count);
 
       setUsageData(formattedData);
     }, (error) => console.error("Dashboard usage logs error:", error));

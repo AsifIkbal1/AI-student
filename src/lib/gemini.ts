@@ -199,7 +199,7 @@ export async function chatWithPDF(prompt: string, fileData: { data: string, mime
   if (fileData && fileData.data) {
     userParts.push({ inlineData: fileData });
   }
-  userParts.push({ text: `You are a PDF Assistant. Answer the user's question based ONLY on the provided document. If the answer is not in the document, say you don't know.\n\nQuestion: ${prompt}` });
+  userParts.push({ text: prompt });
 
   const response = await ai.models.generateContent({
     model: MODELS.FLASH,

@@ -262,17 +262,27 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   // --- Auth MySQL Sync Endpoint ---
   app.post("/api/auth/sync", async (req, res) => {
     try {
-      const { uid, email, displayName, photoURL, isLogin } = req.body;
+      const { uid, email, displayName, photoURL, isLogin, referredBy } = req.body;
       const userAgent = req.headers["user-agent"] || "Unknown";
+
+      // Check if user exists
+      const [existingUsers]: any = await pool.query(`SELECT referral_code, referred_by FROM users WHERE uid = ?`, [uid]);
+      let referralCode = existingUsers.length > 0 ? existingUsers[0].referral_code : null;
+      let finalReferredBy = existingUsers.length > 0 ? null : (referredBy || null); // Only set referredBy on first sync
+
+      if (!referralCode) {
+        // Generate a referral code based on email or random string
+        referralCode = (email.split('@')[0] + Math.floor(Math.random() * 10000)).substring(0, 50);
+      }
 
       // 1. Sync User (Insert or Update)
       await pool.query(`
-        INSERT INTO users (uid, email, displayName, photoURL) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO users (uid, email, displayName, photoURL, referral_code, referred_by) 
+        VALUES (?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
         displayName = VALUES(displayName),
         photoURL = VALUES(photoURL)
-      `, [uid, email, displayName, photoURL]);
+      `, [uid, email, displayName, photoURL, referralCode, finalReferredBy]);
 
       // 2. If it's a login, record the login log
       if (isLogin) {
@@ -734,6 +744,41 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
           INSERT INTO subscriptions (uid, planId, interval_period, paymentMethod, transactionId)
           VALUES (?, ?, ?, ?, ?)
         `, [uid, planId, interval, "manual", paymentId]);
+
+        // Reward referrer (add 7 days to subscription)
+        const [users]: any = await pool.query(`SELECT referred_by FROM users WHERE uid = ?`, [uid]);
+        if (users.length > 0 && users[0].referred_by) {
+          const referrerCode = users[0].referred_by;
+          
+          // Find the referrer uid
+          const [referrerRows]: any = await pool.query(`SELECT uid FROM users WHERE referral_code = ?`, [referrerCode]);
+          if (referrerRows.length > 0) {
+            const referrerUid = referrerRows[0].uid;
+            
+            // Get current user doc from Firebase
+            const referrerDoc = await db.collection("users").doc(referrerUid).get();
+            if (referrerDoc.exists) {
+               const data = referrerDoc.data();
+               if (data && data.subscription) {
+                 let currentExpiresAt = new Date(data.subscription.expiresAt);
+                 const now = new Date();
+                 // If expired, start from now
+                 if (currentExpiresAt < now) {
+                   currentExpiresAt = now;
+                 }
+                 currentExpiresAt.setDate(currentExpiresAt.getDate() + 7);
+                 
+                 await db.collection("users").doc(referrerUid).update({
+                   "subscription.expiresAt": currentExpiresAt.toISOString(),
+                   "subscription.active": true
+                 });
+                 
+                 // Update successful referrals count in MySQL
+                 await pool.query(`UPDATE users SET referral_earnings = referral_earnings + 1 WHERE referral_code = ?`, [referrerCode]);
+               }
+            }
+          }
+        }
       } catch (mysqlError) {
         console.error("MySQL Insert Error:", mysqlError);
       }
@@ -1171,6 +1216,92 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       // console.log("Cortex Cron: Checking tasks...");
     } catch (error) {
       console.error("Cron Error:", error);
+    }
+  });
+
+  // --- Referrals API ---
+  app.get("/api/referrals/stats", async (req, res) => {
+    try {
+      const uid = req.query.uid as string;
+      if (!uid) return res.status(400).json({ error: "Missing uid" });
+      
+      const [users]: any = await pool.query(`SELECT referral_code, referral_earnings FROM users WHERE uid = ?`, [uid]);
+      if (users.length === 0) return res.status(404).json({ error: "User not found" });
+      
+      const referralCode = users[0].referral_code;
+      const earnings = users[0].referral_earnings;
+      
+      const [referredUsers]: any = await pool.query(`SELECT COUNT(*) as count FROM users WHERE referred_by = ?`, [referralCode]);
+      const totalReferred = referredUsers[0].count;
+      
+      res.json({ referralCode, earnings, totalReferred });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Support Tickets API ---
+  app.post("/api/support/create", async (req, res) => {
+    try {
+      const { uid, email, subject, message } = req.body;
+      await pool.query(`INSERT INTO support_tickets (uid, email, subject, message) VALUES (?, ?, ?, ?)`, [uid, email, subject, message]);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/support/my-tickets", async (req, res) => {
+    try {
+      const uid = req.query.uid as string;
+      const [rows]: any = await pool.query(`SELECT * FROM support_tickets WHERE uid = ? ORDER BY timestamp DESC`, [uid]);
+      res.json(rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/support", async (req, res) => {
+    try {
+      const [rows]: any = await pool.query(`SELECT * FROM support_tickets ORDER BY timestamp DESC`);
+      res.json(rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/support/:id/reply", async (req, res) => {
+    try {
+      const { reply } = req.body;
+      const id = req.params.id;
+      await pool.query(`UPDATE support_tickets SET reply = ?, status = 'closed' WHERE id = ?`, [reply, id]);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Settings API ---
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const [rows]: any = await pool.query(`SELECT * FROM system_settings`);
+      const settings = rows.reduce((acc: any, row: any) => ({ ...acc, [row.setting_key]: row.setting_value }), {});
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/settings", async (req, res) => {
+    try {
+      const { settings } = req.body; // object { key: value }
+      const promises = Object.keys(settings).map(key => 
+        pool.query(`INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`, [key, String(settings[key])])
+      );
+      await Promise.all(promises);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

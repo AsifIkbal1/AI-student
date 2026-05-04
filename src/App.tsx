@@ -8,9 +8,9 @@ import { Dashboard } from "./components/Dashboard";
 import { AITutor } from "./components/AITutor";
 import { NeuroTest } from "./components/NeuroTest/NeuroTest";
 import { LandingPage } from "./components/LandingPage";
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -49,6 +49,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AccessPage } from "./components/AccessPage";
 import { PolicyPage } from "./components/PolicyPage";
 import { CheckoutPage } from "./components/CheckoutPage";
+import { SupportPage } from "./components/SupportPage";
+import { ReferralPage } from "./components/ReferralPage";
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: boolean }> = ({ children, requireAccess = true }) => {
@@ -102,13 +104,57 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <Layout>{children}</Layout>;
 };
 
+const MaintenanceWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { profile, loading } = useAuth();
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        setMaintenanceMode(data.maintenance_mode === 'true');
+        setChecking(false);
+      })
+      .catch(() => setChecking(false));
+  }, []);
+
+  if (checking || loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-900">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
+      </div>
+    );
+  }
+
+  if (maintenanceMode && profile?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 text-center">
+        <div className="bg-gray-800 p-10 rounded-3xl max-w-lg w-full shadow-2xl border border-gray-700">
+          <div className="w-20 h-20 bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Settings className="text-blue-500 animate-spin-slow" size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-4">Under Maintenance</h1>
+          <p className="text-gray-400 mb-8">
+            We are currently upgrading the platform to bring you new features. 
+            Please check back in a few minutes.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
-            <Router>
+            <MaintenanceWrapper>
+              <Router>
               <ScrollToTop />
               <Routes>
                 <Route path="/" element={<HomeRoute />} />
@@ -137,12 +183,15 @@ const App: React.FC = () => {
                 <Route path="/subscription" element={<ProtectedRoute requireAccess={false}><Subscription /></ProtectedRoute>} />
                 <Route path="/access" element={<ProtectedRoute requireAccess={false}><AccessPage /></ProtectedRoute>} />
                 <Route path="/checkout/:planId/:interval" element={<ProtectedRoute requireAccess={false}><CheckoutPage /></ProtectedRoute>} />
+                <Route path="/support" element={<ProtectedRoute requireAccess={false}><SupportPage /></ProtectedRoute>} />
+                <Route path="/referrals" element={<ProtectedRoute requireAccess={false}><ReferralPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                 <Route path="/policy/:type" element={<PolicyPage />} />
 
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Router>
+            </MaintenanceWrapper>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

@@ -46,8 +46,11 @@ export const AdminDashboard: React.FC = () => {
   const [manualPayments, setManualPayments] = useState<any[]>([]);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'audit' | 'support' | 'settings'>('overview');
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [settings, setSettings] = useState<{ [key: string]: string }>({ maintenance_mode: 'false' });
+  const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -78,6 +81,47 @@ export const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error("Error changing role:", err);
+    }
+  };
+
+  const handleReplyTicket = async (id: string) => {
+    const reply = replyText[id];
+    if (!reply || !reply.trim()) return;
+    
+    try {
+      const res = await fetch(`/api/admin/support/${id}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reply })
+      });
+      
+      if (res.ok) {
+        setSupportTickets(supportTickets.map(t => t.id === id ? { ...t, status: 'closed', reply } : t));
+        setReplyText(prev => {
+          const newTexts = { ...prev };
+          delete newTexts[id];
+          return newTexts;
+        });
+        alert('Reply sent successfully');
+      }
+    } catch (err) {
+      console.error("Failed to send reply:", err);
+    }
+  };
+
+  const handleUpdateSettings = async (key: string, value: string) => {
+    try {
+      const res = await fetch(`/api/admin/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: { [key]: value } })
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, [key]: value }));
+        alert('Setting updated successfully');
+      }
+    } catch (err) {
+      console.error("Failed to update setting:", err);
     }
   };
 
@@ -186,9 +230,11 @@ export const AdminDashboard: React.FC = () => {
 
     const fetchAdminData = async () => {
       try {
-        const [usersRes, logsRes] = await Promise.all([
+        const [usersRes, logsRes, supportRes, settingsRes] = await Promise.all([
           fetch("/api/admin/users"),
-          fetch("/api/admin/audit-logs")
+          fetch("/api/admin/audit-logs"),
+          fetch("/api/admin/support"),
+          fetch("/api/settings")
         ]);
         
         if (usersRes.ok) {
@@ -199,6 +245,14 @@ export const AdminDashboard: React.FC = () => {
         
         if (logsRes.ok) {
           setAuditLogs(await logsRes.json());
+        }
+
+        if (supportRes.ok) {
+          setSupportTickets(await supportRes.json());
+        }
+
+        if (settingsRes.ok) {
+          setSettings(await settingsRes.json());
         }
       } catch (error) {
         console.error("Error fetching admin data:", error);
@@ -365,6 +419,18 @@ export const AdminDashboard: React.FC = () => {
           className={cn("pb-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors", activeTab === 'audit' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")}
         >
           Audit Logs
+        </button>
+        <button 
+          onClick={() => setActiveTab('support')}
+          className={cn("pb-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors", activeTab === 'support' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")}
+        >
+          Support Tickets
+        </button>
+        <button 
+          onClick={() => setActiveTab('settings')}
+          className={cn("pb-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors", activeTab === 'settings' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")}
+        >
+          Settings
         </button>
       </div>
 
@@ -628,6 +694,105 @@ export const AdminDashboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {activeTab === 'support' && (
+      <div className="grid grid-cols-1 gap-8 mb-10">
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Support Tickets</h3>
+            <span className="text-xs font-medium text-gray-400">{supportTickets.length} Tickets</span>
+          </div>
+          <div className="space-y-4">
+            {supportTickets.map(ticket => (
+              <div key={ticket.id} className="border border-gray-100 rounded-2xl p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{ticket.subject}</h3>
+                    <p className="text-xs text-gray-500">{ticket.email}</p>
+                  </div>
+                  <span className={cn(
+                    "flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full uppercase",
+                    ticket.status === 'open' ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
+                  )}>
+                    {ticket.status}
+                  </span>
+                </div>
+                <p className="text-gray-600 text-sm mb-4">{ticket.message}</p>
+                
+                {ticket.status === 'open' ? (
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      type="text"
+                      value={replyText[ticket.id] || ''}
+                      onChange={(e) => setReplyText({ ...replyText, [ticket.id]: e.target.value })}
+                      placeholder="Type your reply..."
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleReplyTicket(ticket.id)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+                    >
+                      Reply
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-xl p-4 border-l-4 border-blue-500 mt-4">
+                    <p className="text-xs font-bold text-blue-600 mb-1">Your Reply:</p>
+                    <p className="text-gray-700 text-sm">{ticket.reply}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {activeTab === 'settings' && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">System Control</h3>
+          
+          <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 border border-red-100 bg-red-50/50 rounded-2xl">
+              <div>
+                <h4 className="font-bold text-gray-900">Maintenance Mode</h4>
+                <p className="text-xs text-gray-500 mt-1">When enabled, all users will be blocked from accessing the app.</p>
+              </div>
+              <button
+                onClick={() => handleUpdateSettings('maintenance_mode', settings.maintenance_mode === 'true' ? 'false' : 'true')}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-sm font-bold transition-colors w-24",
+                  settings.maintenance_mode === 'true' 
+                    ? "bg-red-600 text-white" 
+                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                )}
+              >
+                {settings.maintenance_mode === 'true' ? 'ON' : 'OFF'}
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 border border-gray-100 bg-gray-50 rounded-2xl">
+              <div>
+                <h4 className="font-bold text-gray-900">Signups Enabled</h4>
+                <p className="text-xs text-gray-500 mt-1">Allow new users to register.</p>
+              </div>
+              <button
+                onClick={() => handleUpdateSettings('signups_enabled', settings.signups_enabled === 'false' ? 'true' : 'false')}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-sm font-bold transition-colors w-24",
+                  settings.signups_enabled !== 'false' 
+                    ? "bg-emerald-600 text-white" 
+                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                )}
+              >
+                {settings.signups_enabled !== 'false' ? 'ON' : 'OFF'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

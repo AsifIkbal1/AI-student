@@ -55,6 +55,48 @@ export async function initMySQL() {
       }
     }
 
+    // Safely add referral columns if they don't exist
+    try {
+      await connection.query(`
+        ALTER TABLE users 
+        ADD COLUMN referral_code VARCHAR(50) UNIQUE,
+        ADD COLUMN referred_by VARCHAR(255),
+        ADD COLUMN referral_earnings INT DEFAULT 0
+      `);
+    } catch (e: any) {
+      if (e.code !== 'ER_DUP_FIELDNAME') {
+        console.error("Error adding referral columns:", e);
+      }
+    }
+
+    // Create support tickets table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS support_tickets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        uid VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        status ENUM('open', 'closed') DEFAULT 'open',
+        reply TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create system settings table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value TEXT
+      )
+    `);
+
+    // Insert default settings if they don't exist
+    await connection.query(`
+      INSERT IGNORE INTO system_settings (setting_key, setting_value) 
+      VALUES ('maintenance_mode', 'false')
+    `);
+
     // Create login logs table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS login_logs (

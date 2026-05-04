@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Brain,
   Library,
+  Gift,
   Calendar,
   Code,
   Video,
@@ -107,9 +108,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { icon: Cpu, label: t("cortex_studio"), path: "/cortex-studio" },
     { icon: FileText, label: t("digital_notes"), path: "/digital-notes" },
     { icon: CreditCard, label: t("subscription"), path: "/subscription" },
+    { icon: HelpCircle, label: "Help & Support", path: "/support" },
   ];
 
   const specializedItems = [
+    { icon: Gift, label: "Refer & Earn", path: "/referrals" },
     { icon: Brain, label: t("neurotest_ai"), path: "/neurotest-ai" },
   ];
 

@@ -94,7 +94,20 @@ export async function initMySQL() {
     // Insert default settings if they don't exist
     await connection.query(`
       INSERT IGNORE INTO system_settings (setting_key, setting_value) 
-      VALUES ('maintenance_mode', 'false')
+      VALUES ('maintenance_mode', 'false'), ('total_api_limit', '1000000')
+    `);
+
+    // Create API usage table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS api_usage (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        uid VARCHAR(255),
+        model VARCHAR(100),
+        prompt_tokens INT DEFAULT 0,
+        completion_tokens INT DEFAULT 0,
+        total_tokens INT DEFAULT 0,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
     // Create login logs table

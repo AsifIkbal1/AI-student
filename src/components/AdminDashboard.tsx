@@ -230,11 +230,12 @@ export const AdminDashboard: React.FC = () => {
 
     const fetchAdminData = async () => {
       try {
-        const [usersRes, logsRes, supportRes, settingsRes] = await Promise.all([
+        const [usersRes, logsRes, supportRes, settingsRes, usageRes] = await Promise.all([
           fetch("/api/admin/users"),
           fetch("/api/admin/audit-logs"),
           fetch("/api/admin/support"),
-          fetch("/api/settings")
+          fetch("/api/settings"),
+          fetch("/api/admin/usage-stats")
         ]);
         
         if (usersRes.ok) {
@@ -253,6 +254,16 @@ export const AdminDashboard: React.FC = () => {
 
         if (settingsRes.ok) {
           setSettings(await settingsRes.json());
+        }
+
+        if (usageRes.ok) {
+          const usage = await usageRes.json();
+          setStats(prev => ({ 
+            ...prev, 
+            totalApiCredits: usage.limit, 
+            remainingApiCredits: usage.remaining,
+            totalCreditsUsed: usage.totalUsed
+          }));
         }
       } catch (error) {
         console.error("Error fetching admin data:", error);
@@ -792,6 +803,21 @@ export const AdminDashboard: React.FC = () => {
               >
                 {settings.signups_enabled !== 'false' ? 'ON' : 'OFF'}
               </button>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 border border-gray-100 bg-gray-50 rounded-2xl">
+              <div className="flex-1 mr-4">
+                <h4 className="font-bold text-gray-900">API Credit Limit</h4>
+                <p className="text-xs text-gray-500 mt-1">Set total token limit for the platform tracking.</p>
+              </div>
+              <div className="flex gap-2">
+                <input 
+                  type="number"
+                  defaultValue={settings.total_api_limit || 1000000}
+                  onBlur={(e) => handleUpdateSettings('total_api_limit', e.target.value)}
+                  className="w-32 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </div>
         </div>

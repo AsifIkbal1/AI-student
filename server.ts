@@ -210,6 +210,19 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         messages: messages as any[],
         response_format
       });
+      // Log usage to MySQL
+      try {
+        const usage = response.usage;
+        if (usage) {
+          await pool.query(`
+            INSERT INTO api_usage (uid, model, prompt_tokens, completion_tokens, total_tokens)
+            VALUES (?, ?, ?, ?, ?)
+          `, [req.body.uid || 'unknown', response.model, usage.prompt_tokens, usage.completion_tokens, usage.total_tokens]);
+        }
+      } catch (logErr) {
+        console.error("Error logging API usage:", logErr);
+      }
+
       res.json({ 
         text: response.choices[0].message.content, 
         usage: response.usage 
@@ -244,6 +257,19 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         }],
         config: { responseMimeType }
       });
+
+      // Log usage to MySQL
+      try {
+        const usage = response.usageMetadata;
+        if (usage) {
+          await pool.query(`
+            INSERT INTO api_usage (uid, model, prompt_tokens, completion_tokens, total_tokens)
+            VALUES (?, ?, ?, ?, ?)
+          `, [req.body.uid || 'unknown', MODELS.GEMINI, usage.prompt_tokens || 0, usage.candidatesTokenCount || 0, usage.totalTokenCount || 0]);
+        }
+      } catch (logErr) {
+        console.error("Error logging API usage:", logErr);
+      }
 
       res.json({ 
         text: response.text || "", 
@@ -1276,6 +1302,28 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       const id = req.params.id;
       await pool.query(`UPDATE support_tickets SET reply = ?, status = 'closed' WHERE id = ?`, [reply, id]);
       res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/usage-stats", async (req, res) => {
+    try {
+      const [totalRows]: any = await pool.query(`SELECT SUM(total_tokens) as total FROM api_usage`);
+      const totalUsed = totalRows[0].total || 0;
+
+      const [todayRows]: any = await pool.query(`SELECT SUM(total_tokens) as total FROM api_usage WHERE DATE(timestamp) = CURDATE()`);
+      const todayUsed = todayRows[0].total || 0;
+
+      const [limitRows]: any = await pool.query(`SELECT setting_value FROM system_settings WHERE setting_key = 'total_api_limit'`);
+      const limit = parseInt(limitRows[0]?.setting_value || "1000000");
+
+      res.json({
+        totalUsed,
+        todayUsed,
+        limit,
+        remaining: Math.max(0, limit - totalUsed)
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

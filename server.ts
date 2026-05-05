@@ -1460,6 +1460,38 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     });
   }
 
+  // User Status Watcher (Sync MySQL -> Firestore every 30s)
+  // This allows manual changes in XAMPP (phpMyAdmin) to reflect in the app
+  const userStatusCache = new Map<string, string>();
+
+  async function syncUserStatuses() {
+    if (!db) return;
+    try {
+      const [users]: any = await pool.query('SELECT uid, status FROM users');
+      
+      for (const user of users) {
+        const lastStatus = userStatusCache.get(user.uid);
+        if (lastStatus !== undefined && lastStatus !== user.status) {
+          // Status changed in MySQL, sync to Firestore
+          console.log(`[Watcher] Detect MySQL status change for ${user.uid}: ${user.status}`);
+          await db.collection("users").doc(user.uid).set({
+            isBlocked: user.status === 'banned'
+          }, { merge: true });
+          console.log(`[Watcher] Firestore updated for user: ${user.uid}`);
+        }
+        // Update cache
+        userStatusCache.set(user.uid, user.status);
+      }
+    } catch (error) {
+      console.error("[Watcher] Sync error:", error);
+    }
+  }
+
+  // Start the watcher
+  setInterval(syncUserStatuses, 30000);
+  // Initial sync after a short delay
+  setTimeout(syncUserStatuses, 10000);
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });

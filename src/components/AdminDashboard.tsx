@@ -56,11 +56,14 @@ export const AdminDashboard: React.FC = () => {
 
   const handleBanUser = async (uid: string, currentStatus: string) => {
     const action = currentStatus === 'banned' ? 'unban' : 'ban';
-    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+    console.log(`Action: ${action} for user: ${uid} (Current Status: ${currentStatus})`);
     try {
       const res = await fetch(`/api/admin/users/${uid}/${action}`, { method: 'POST' });
       if (res.ok) {
-        setUsers(users.map(u => u.uid === uid ? { ...u, status: action === 'ban' ? 'banned' : 'active' } : u));
+        console.log(`Successfully ${action}ned user: ${uid}`);
+        setUsers(prev => prev.map(u => u.uid === uid ? { ...u, status: action === 'ban' ? 'banned' : 'active' } : u));
+      } else {
+        console.error(`Failed to ${action} user:`, await res.text());
       }
     } catch (err) {
       console.error(`Error trying to ${action} user:`, err);

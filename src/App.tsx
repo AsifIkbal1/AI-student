@@ -51,6 +51,7 @@ import { PolicyPage } from "./components/PolicyPage";
 import { CheckoutPage } from "./components/CheckoutPage";
 import { SupportPage } from "./components/SupportPage";
 import { ReferralPage } from "./components/ReferralPage";
+import { SuspendedPage } from "./components/SuspendedPage";
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: boolean }> = ({ children, requireAccess = true }) => {
@@ -70,6 +71,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: bool
 
   if (!user) {
     return <Navigate to="/" />;
+  }
+
+  // Check for suspension
+  if (profile?.isBlocked) {
+    return <Navigate to="/suspended" />;
   }
 
   if (requireAccess && profile) {
@@ -187,6 +193,7 @@ const App: React.FC = () => {
                 <Route path="/referrals" element={<ProtectedRoute requireAccess={false}><ReferralPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                 <Route path="/policy/:type" element={<PolicyPage />} />
+                <Route path="/suspended" element={<SuspendedPage />} />
 
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
@@ -200,8 +207,9 @@ const App: React.FC = () => {
 };
 
 const HomeRoute = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   if (loading) return null;
+  if (user && profile?.isBlocked) return <Navigate to="/suspended" />;
   return user ? <Navigate to="/dashboard" /> : <LandingPage />;
 };
 

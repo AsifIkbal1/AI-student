@@ -83,6 +83,13 @@ async function startServer() {
   await initMySQL();
 
   app.use(express.json({ limit: "50mb" }));
+  
+  // Request Logging
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+  });
+  
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   const getOpenAI = () => {
@@ -435,19 +442,49 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   });
 
   app.post("/api/admin/users/:uid/ban", async (req, res) => {
+    const { uid } = req.params;
+    console.log(`Banning user: ${uid}`);
     try {
-      await pool.query(`UPDATE users SET status = 'banned' WHERE uid = ?`, [req.params.uid]);
+      await pool.query(`UPDATE users SET status = 'banned' WHERE uid = ?`, [uid]);
+      
+      // Sync to Firestore
+      if (db) {
+        console.log(`Syncing ban to Firestore for user: ${uid}`);
+        await db.collection("users").doc(uid).set({
+          isBlocked: true
+        }, { merge: true });
+        console.log(`Firestore updated for ban: ${uid}`);
+      } else {
+        console.warn("Firestore db not initialized in ban route");
+      }
+      
       res.json({ success: true, status: 'banned' });
     } catch (error: any) {
+      console.error(`Error banning user ${uid}:`, error.message);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/admin/users/:uid/unban", async (req, res) => {
+    const { uid } = req.params;
+    console.log(`Unbanning user: ${uid}`);
     try {
-      await pool.query(`UPDATE users SET status = 'active' WHERE uid = ?`, [req.params.uid]);
+      await pool.query(`UPDATE users SET status = 'active' WHERE uid = ?`, [uid]);
+      
+      // Sync to Firestore
+      if (db) {
+        console.log(`Syncing unban to Firestore for user: ${uid}`);
+        await db.collection("users").doc(uid).set({
+          isBlocked: false
+        }, { merge: true });
+        console.log(`Firestore updated for unban: ${uid}`);
+      } else {
+        console.warn("Firestore db not initialized in unban route");
+      }
+      
       res.json({ success: true, status: 'active' });
     } catch (error: any) {
+      console.error(`Error unbanning user ${uid}:`, error.message);
       res.status(500).json({ error: error.message });
     }
   });

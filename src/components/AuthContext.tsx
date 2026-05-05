@@ -104,12 +104,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         // Listen to profile changes
         const userDocRef = doc(db, "users", user.uid);
-        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+        const unsubscribeProfile = onSnapshot(userDocRef, async (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data() as UserProfile;
 
+            // Real-time ban enforcement
+            // We don't sign out here so that unbanning can be instant.
+            // App.tsx handles the redirection based on profile.isBlocked.
+            setProfile(data);
+            setLoading(false);
+            if (data.isBlocked) return;
+
             // Sync latest Google photo & name into Firestore if outdated
-            const needsUpdate =
+            const needsUpdate = 
               (user.photoURL && data.photoURL !== user.photoURL) ||
               (user.displayName && data.displayName !== user.displayName);
 
@@ -200,7 +207,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const syncData = await syncRes.json();
           if (syncData.status === 'banned') {
             await signOut(auth);
-            alert("Your account has been suspended by the administrator.");
             return;
           }
         }

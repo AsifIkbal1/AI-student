@@ -17,13 +17,13 @@ function checkApiKey() {
 }
 
 export const MODELS = {
-  FLASH: "gemini-1.5-flash-8b", // Hyper-fast model for paid users
-  PRO: "gemini-1.5-pro",
+  FLASH: "gemini-3-flash-preview",
+  PRO: "gemini-3.1-pro-preview",
   THINKING: "gemini-3.1-pro-preview",
-  IMAGE: "gemini-1.5-flash",
+  IMAGE: "gemini-2.5-flash-image",
 };
 
-const FALLBACK_MODELS = ["gemini-3-flash-preview", "gemini-1.5-flash", "gemini-3.1-pro-preview"];
+const FALLBACK_MODELS = ["gemini-3-flash-preview", "gemini-3.1-pro-preview"];
 
 export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
   checkApiKey();

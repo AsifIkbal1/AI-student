@@ -261,6 +261,45 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     }
   });
 
+  app.post("/api/gemini/stream", async (req, res) => {
+    const { prompt, history, uid } = req.body;
+    let geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    if (geminiKey.startsWith('"') && geminiKey.endsWith('"')) geminiKey = geminiKey.slice(1, -1);
+
+    if (!geminiKey) return res.status(401).json({ error: "API Key missing" });
+
+    try {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${geminiKey}`;
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [...(history || []), { role: "user", parts: [{ text: prompt }] }],
+          systemInstruction: { parts: [{ text: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly." }] }
+        })
+      });
+
+      if (!response.body) throw new Error("No response body");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+      res.end();
+    } catch (error: any) {
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.end();
+    }
+  });
+
   app.post("/api/gemini/generate", async (req, res) => {
     const { prompt, systemPrompt, responseMimeType, fileData } = req.body;
     

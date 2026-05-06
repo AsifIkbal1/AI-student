@@ -26,38 +26,16 @@ export async function* generateTutorResponseStream(
   prompt: string, 
   history: any[] = []
 ) {
-  if (!apiKey || apiKey === "MISSING_KEY") {
-    throw new Error("AI Service Unavailable. Please check your API configuration.");
-  }
-  
-  const baseUrl = "https://generativelanguage.googleapis.com/v1beta";
-  const model = MODELS.FLASH;
-  const url = `${baseUrl}/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
-
-  const contents = [
-    ...history,
-    { role: "user", parts: [{ text: prompt }] }
-  ];
-
-  const response = await fetch(url, {
+  const response = await fetch("/api/gemini/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents,
-      systemInstruction: {
-        parts: [{ text: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly. Use markdown." }]
-      },
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      }
+      prompt,
+      history
     })
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: { message: "Unknown AI Error" } }));
-    throw new Error(err.error?.message || "AI Service Error");
-  }
+  if (!response.ok) throw new Error("Server Error");
 
   const reader = response.body?.getReader();
   if (!reader) return;
@@ -79,9 +57,7 @@ export async function* generateTutorResponseStream(
           const data = JSON.parse(line.trim().substring(6));
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) yield text;
-        } catch (e) {
-          // Ignore parse errors for partial chunks
-        }
+        } catch (e) {}
       }
     }
   }

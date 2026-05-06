@@ -262,39 +262,34 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   });
 
   app.post("/api/gemini/stream", async (req, res) => {
-    const { prompt, history, uid } = req.body;
-    let geminiKey = (process.env.GEMINI_API_KEY || "").trim();
-    if (geminiKey.startsWith('"') && geminiKey.endsWith('"')) geminiKey = geminiKey.slice(1, -1);
-
-    if (!geminiKey) return res.status(401).json({ error: "API Key missing" });
-
+    const { prompt, history } = req.body;
     try {
+      const genAI = getGemini();
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "You are 'AI Students Assistant' — a formal yet friendly academic tutor."
+      });
+
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${geminiKey}`;
-      
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [...(history || []), { role: "user", parts: [{ text: prompt }] }],
-          systemInstruction: { parts: [{ text: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly." }] }
-        })
+      const chat = model.startChat({
+        history: (history || []).map((m: any) => ({
+          role: m.role === "model" ? "model" : "user",
+          parts: [{ text: m.text }]
+        }))
       });
 
-      if (!response.body) throw new Error("No response body");
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const result = await chat.sendMessageStream(prompt);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(value);
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        res.write(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: chunkText }] } }] })}\n\n`);
       }
       res.end();
     } catch (error: any) {
+      console.error("Gemini Stream Error:", error);
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
       res.end();
     }

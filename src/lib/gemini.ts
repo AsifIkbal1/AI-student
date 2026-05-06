@@ -17,51 +17,10 @@ function checkApiKey() {
 }
 
 export const MODELS = {
-  FLASH: "gemini-1.5-flash",
-  PRO: "gemini-1.5-pro",
-  IMAGE: "gemini-1.5-flash",
+  FLASH: "gemini-3-flash-preview",
+  PRO: "gemini-3.1-pro-preview",
+  IMAGE: "gemini-2.5-flash-image",
 };
-
-export async function* generateTutorResponseStream(
-  prompt: string, 
-  history: any[] = []
-) {
-  const response = await fetch("/api/gemini/stream", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      history
-    })
-  });
-
-  if (!response.ok) throw new Error("Server Error");
-
-  const reader = response.body?.getReader();
-  if (!reader) return;
-
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      if (line.trim().startsWith("data: ")) {
-        try {
-          const data = JSON.parse(line.trim().substring(6));
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) yield text;
-        } catch (e) {}
-      }
-    }
-  }
-}
 
 export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
   checkApiKey();

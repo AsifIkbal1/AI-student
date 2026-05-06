@@ -261,40 +261,6 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     }
   });
 
-  app.post("/api/gemini/stream", async (req, res) => {
-    const { prompt, history } = req.body;
-    try {
-      const genAI = getGemini();
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: "You are 'AI Students Assistant' — a formal yet friendly academic tutor."
-      });
-
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-
-      const chat = model.startChat({
-        history: (history || []).map((m: any) => ({
-          role: m.role === "model" ? "model" : "user",
-          parts: [{ text: m.text }]
-        }))
-      });
-
-      const result = await chat.sendMessageStream(prompt);
-
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        res.write(`data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: chunkText }] } }] })}\n\n`);
-      }
-      res.end();
-    } catch (error: any) {
-      console.error("Gemini Stream Error:", error);
-      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-      res.end();
-    }
-  });
-
   app.post("/api/gemini/generate", async (req, res) => {
     const { prompt, systemPrompt, responseMimeType, fileData } = req.body;
     

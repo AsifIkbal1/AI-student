@@ -17,10 +17,75 @@ function checkApiKey() {
 }
 
 export const MODELS = {
-  FLASH: "gemini-3-flash-preview",
-  PRO: "gemini-3.1-pro-preview",
-  IMAGE: "gemini-2.5-flash-image",
+  FLASH: "gemini-1.5-flash",
+  PRO: "gemini-1.5-pro",
+  IMAGE: "gemini-1.5-flash",
 };
+
+export async function* generateTutorResponseStream(
+  prompt: string, 
+  history: any[] = []
+) {
+  if (!apiKey || apiKey === "MISSING_KEY") {
+    throw new Error("AI Service Unavailable. Please check your API configuration.");
+  }
+  
+  const baseUrl = "https://generativelanguage.googleapis.com/v1beta";
+  const model = MODELS.FLASH;
+  const url = `${baseUrl}/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+
+  const contents = [
+    ...history,
+    { role: "user", parts: [{ text: prompt }] }
+  ];
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents,
+      systemInstruction: {
+        parts: [{ text: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly. Use markdown." }]
+      },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: { message: "Unknown AI Error" } }));
+    throw new Error(err.error?.message || "AI Service Error");
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) return;
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.trim().startsWith("data: ")) {
+        try {
+          const data = JSON.parse(line.trim().substring(6));
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) yield text;
+        } catch (e) {
+          // Ignore parse errors for partial chunks
+        }
+      }
+    }
+  }
+}
 
 export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
   checkApiKey();

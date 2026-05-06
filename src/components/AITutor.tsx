@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, Loader2 } from "lucide-react";
-import { generateTutorResponse, logUsage, handleAIError } from "../lib/ai";
+import { Send, User, Bot, Loader2, MessageSquare } from "lucide-react";
+import { generateTutorResponseStream, handleAIError } from "../lib/ai";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
 import { useAuth } from "./AuthContext";
@@ -53,19 +53,35 @@ export const AITutor: React.FC = () => {
     }
 
     try {
-      const history = messages.map(m => ({
+      // Limit history to last 6 messages for maximum speed
+      const recentMessages = messages.slice(-6);
+      const history = recentMessages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
       }));
       
-      setCurrentTopic(input); // Automation: Set topic for Smart Resources
+      setCurrentTopic(input);
 
-      const { text, usage } = await generateTutorResponse(input, history);
-      setMessages((prev) => [...prev, { role: "model", text: text || "I'm sorry, I couldn't generate a response." }]);
+      // Add placeholder for bot message
+      setMessages((prev) => [...prev, { role: "model", text: "" }]);
+      
+      let fullText = "";
+      const stream = generateTutorResponseStream(input, history);
+
+      for await (const chunk of stream) {
+        fullText += chunk;
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { 
+            role: "model", 
+            text: fullText 
+          };
+          return newMessages;
+        });
+      }
       
       if (profile) {
         await deductCredits(1);
-        await logUsage(profile.uid, "AITutor", usage);
       }
     } catch (error) {
       const errorMessage = handleAIError(error);

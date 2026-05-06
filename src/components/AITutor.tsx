@@ -177,6 +177,3 @@ export const AITutor: React.FC = () => {
     </div>
   );
 };
-
-import { MessageSquare } from "lucide-react";
-import { cn } from "../lib/utils";

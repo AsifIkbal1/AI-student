@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
 import { useAuth } from "./AuthContext";
 import { useLanguage } from "./LanguageContext";
+import { cn } from "../lib/utils";
 
 interface Message {
   role: "user" | "model";

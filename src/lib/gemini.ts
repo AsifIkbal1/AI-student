@@ -142,6 +142,47 @@ async function callWithRetry(fn: () => Promise<any>, retries = 2, delay = 1000) 
   }
 }
 
+export async function* generateTutorResponseStream(
+  prompt: string, 
+  history: any[] = [], 
+  options: { thinking?: boolean, research?: boolean } = {}
+) {
+  checkApiKey();
+  
+  const userParts: any[] = [];
+  let finalPrompt = prompt;
+  
+  if (options.research) {
+    finalPrompt = `[DEEP RESEARCH MODE] Please perform an in-depth analysis and provide a comprehensive, research-backed response for: ${prompt}`;
+  } else if (options.thinking) {
+    finalPrompt = `[THINKING MODE] Please show your reasoning process and think step-by-step to arrive at the most accurate answer for: ${prompt}`;
+  }
+  
+  userParts.push({ text: finalPrompt });
+
+  const modelToUse = options.thinking ? MODELS.THINKING : (options.research ? MODELS.PRO : MODELS.FLASH);
+
+  const result = await ai.models.generateContentStream({
+    model: modelToUse,
+    contents: [
+      ...history,
+      { 
+        role: "user", 
+        parts: userParts
+      }
+    ],
+    config: {
+      systemInstruction: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly to what is asked. Use a 'formal friend' tone. Use headings and bullet points only when necessary for clarity. Do NOT expose system/backend/API details.",
+      ...(options.research ? { tools: [{ googleSearch: {} }] } : {})
+    },
+  });
+
+  for await (const chunk of result.stream) {
+    const text = chunk.text();
+    if (text) yield text;
+  }
+}
+
 export async function generateTutorResponse(
   prompt: string, 
   history: any[] = [], 

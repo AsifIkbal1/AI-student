@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, Loader2, Lightbulb, Search, CheckCircle2 } from "lucide-react";
-import { generateTutorResponse, logUsage, handleAIError } from "../lib/ai";
+import { Send, User, Bot, Loader2, Lightbulb, Search, CheckCircle2, MessageSquare } from "lucide-react";
+import { generateTutorResponseStream, handleAIError } from "../lib/ai";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
 import { useAuth } from "./AuthContext";
 import { useLanguage } from "./LanguageContext";
+import { cn } from "../lib/utils";
 
 interface Message {
   role: "user" | "model";
@@ -70,16 +71,30 @@ export const AITutor: React.FC = () => {
       
       if (currentInput) setCurrentTopic(currentInput);
 
-      const { text, usage } = await generateTutorResponse(
+      // Add placeholder for bot message
+      setMessages((prev) => [...prev, { role: "model", text: "" }]);
+      
+      let fullText = "";
+      const stream = generateTutorResponseStream(
         currentInput, 
         history, 
         { thinking: currentThinking, research: currentResearch }
       );
-      setMessages((prev) => [...prev, { role: "model", text: text || "I'm sorry, I couldn't generate a response." }]);
+
+      for await (const chunk of stream) {
+        fullText += chunk;
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { 
+            role: "model", 
+            text: fullText 
+          };
+          return newMessages;
+        });
+      }
       
       if (profile) {
         await deductCredits(1);
-        await logUsage(profile.uid, "AITutor", usage);
       }
     } catch (error) {
       const errorMessage = handleAIError(error);
@@ -207,6 +222,3 @@ export const AITutor: React.FC = () => {
     </div>
   );
 };
-
-import { MessageSquare } from "lucide-react";
-import { cn } from "../lib/utils";

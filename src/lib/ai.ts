@@ -1,10 +1,11 @@
-import { ai, MODELS, generateQuiz, handleAIError, logUsage, generateTutorResponse, generateNotes, generateSlides, chatWithPDF, generateEssay, generateFlashcards, solveDoubt, summarizeVideo, helpWithCode, generateSmartStudyPackage, analyzeSkillGap, generateCareerRoadmap, generateStudyPlan, digitalNotesProcess } from "./gemini";
+import { ai, MODELS, generateQuiz, handleAIError, logUsage, generateTutorResponse, generateTutorResponseStream, generateNotes, generateSlides, chatWithPDF, generateEssay, generateFlashcards, solveDoubt, summarizeVideo, helpWithCode, generateSmartStudyPackage, analyzeSkillGap, generateCareerRoadmap, generateStudyPlan, digitalNotesProcess } from "./gemini";
 
 export { 
   generateQuiz, 
   handleAIError, 
   logUsage, 
   generateTutorResponse, 
+  generateTutorResponseStream,
   generateNotes, 
   generateSlides, 
   chatWithPDF, 

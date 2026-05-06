@@ -20,8 +20,10 @@ export const MODELS = {
   FLASH: "gemini-3-flash-preview",
   PRO: "gemini-3.1-pro-preview",
   THINKING: "gemini-3.1-pro-preview",
-  IMAGE: "gemini-2.5-flash-image", // Restoring original ID
+  IMAGE: "gemini-2.5-flash-image",
 };
+
+const FALLBACK_MODELS = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
 
 export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
   checkApiKey();
@@ -123,6 +125,23 @@ export async function logUsage(uid: string, tool: string, usage: any) {
   }
 }
 
+async function callWithRetry(fn: () => Promise<any>, retries = 2, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const isRetryable = error?.status === 503 || error?.status === 429 || (error?.message && (error.message.includes("503") || error.message.includes("overloaded")));
+      if (isRetryable && i < retries - 1) {
+        console.warn(`AI Busy, retrying in ${delay}ms... (Attempt ${i + 1}/${retries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 export async function generateTutorResponse(
   prompt: string, 
   history: any[] = [], 
@@ -131,8 +150,8 @@ export async function generateTutorResponse(
   checkApiKey();
   
   const userParts: any[] = [];
-  
   let finalPrompt = prompt;
+  
   if (options.research) {
     finalPrompt = `[DEEP RESEARCH MODE] Please perform an in-depth analysis and provide a comprehensive, research-backed response for: ${prompt}`;
   } else if (options.thinking) {
@@ -141,24 +160,46 @@ export async function generateTutorResponse(
   
   userParts.push({ text: finalPrompt });
 
-  // Select model based on options
-  const modelToUse = options.thinking ? MODELS.THINKING : (options.research ? MODELS.PRO : MODELS.FLASH);
+  const tryModel = async (modelName: string) => {
+    return await ai.models.generateContent({
+      model: modelName,
+      contents: [
+        ...history,
+        { 
+          role: "user", 
+          parts: userParts
+        }
+      ],
+      config: {
+        systemInstruction: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly to what is asked. Use a 'formal friend' tone. Use headings and bullet points only when necessary for clarity. Do NOT expose system/backend/API details.",
+        ...(options.research ? { tools: [{ googleSearch: {} }] } : {})
+      },
+    });
+  };
 
-  const response = await ai.models.generateContent({
-    model: modelToUse,
-    contents: [
-      ...history,
-      { 
-        role: "user", 
-        parts: userParts
+  try {
+    // 1. Try Primary Model with Retry
+    const modelToUse = options.thinking ? MODELS.THINKING : (options.research ? MODELS.PRO : MODELS.FLASH);
+    const response = await callWithRetry(() => tryModel(modelToUse));
+    return { text: response.text, usage: response.usageMetadata };
+  } catch (error: any) {
+    // 2. If Primary fails with 503/404, try Fallback Models
+    console.error("Primary model failed, attempting fallback...", error.message);
+    
+    for (const fallbackModel of FALLBACK_MODELS) {
+      try {
+        console.log(`Trying fallback model: ${fallbackModel}`);
+        const response = await tryModel(fallbackModel);
+        return { text: response.text, usage: response.usageMetadata };
+      } catch (fallbackError) {
+        console.warn(`Fallback ${fallbackModel} failed too.`);
+        continue;
       }
-    ],
-    config: {
-      systemInstruction: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly to what is asked. Use a 'formal friend' tone. Use headings and bullet points only when necessary for clarity. Do NOT expose system/backend/API details.",
-      ...(options.research ? { tools: [{ googleSearch: {} }] } : {})
-    },
-  });
-  return { text: response.text, usage: response.usageMetadata };
+    }
+    
+    // If all fail, throw the original error
+    throw error;
+  }
 }
 
 export async function generateNotes(content: string, fileData?: { data: string, mimeType: string }) {

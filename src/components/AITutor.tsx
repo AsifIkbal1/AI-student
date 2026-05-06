@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, Loader2 } from "lucide-react";
+import { Send, User, Bot, Loader2, Lightbulb, Search, CheckCircle2 } from "lucide-react";
 import { generateTutorResponse, logUsage, handleAIError } from "../lib/ai";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
@@ -17,6 +17,8 @@ export const AITutor: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [thinkingMode, setThinkingMode] = useState(false);
+  const [researchMode, setResearchMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export const AITutor: React.FC = () => {
     }
   }, [messages]);
 
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -39,16 +42,23 @@ export const AITutor: React.FC = () => {
       return;
     }
 
-    const userMessage: Message = { role: "user", text: input };
+    const userMessage: Message = { 
+      role: "user", 
+      text: input
+    };
+
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
+    const currentThinking = thinkingMode;
+    const currentResearch = researchMode;
+    
     setInput("");
     setLoading(true);
 
-    const lowerInput = input.toLowerCase();
+    const lowerInput = currentInput.toLowerCase();
     if (lowerInput.includes("api key") || lowerInput.includes("backend") || lowerInput.includes("system logic") || lowerInput.includes("admin controls")) {
       setMessages((prev) => [...prev, { role: "model", text: "This information is managed by the system administrator." }]);
       setLoading(false);
-      setInput("");
       return;
     }
 
@@ -58,9 +68,13 @@ export const AITutor: React.FC = () => {
         parts: [{ text: m.text }]
       }));
       
-      setCurrentTopic(input); // Automation: Set topic for Smart Resources
+      if (currentInput) setCurrentTopic(currentInput);
 
-      const { text, usage } = await generateTutorResponse(input, history);
+      const { text, usage } = await generateTutorResponse(
+        currentInput, 
+        history, 
+        { thinking: currentThinking, research: currentResearch }
+      );
       setMessages((prev) => [...prev, { role: "model", text: text || "I'm sorry, I couldn't generate a response." }]);
       
       if (profile) {
@@ -140,19 +154,51 @@ export const AITutor: React.FC = () => {
       </div>
 
       <div className="p-8 border-t border-gray-100 bg-gray-50/50">
-        <div className="flex gap-4">
+        <div className="flex gap-4 mb-4">
+          <button
+            onClick={() => { setThinkingMode(!thinkingMode); if (!thinkingMode) setResearchMode(false); }}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border",
+              thinkingMode 
+                ? "bg-amber-100 border-amber-200 text-amber-700 shadow-sm" 
+                : "bg-white border-gray-200 text-gray-500 hover:border-amber-200 hover:text-amber-600"
+            )}
+          >
+            <Lightbulb size={16} className={thinkingMode ? "animate-pulse" : ""} />
+            Thinking Mode
+            {thinkingMode && <CheckCircle2 size={12} className="ml-1" />}
+          </button>
+          <button
+            onClick={() => { setResearchMode(!researchMode); if (!researchMode) setThinkingMode(false); }}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border",
+              researchMode 
+                ? "bg-blue-100 border-blue-200 text-blue-700 shadow-sm" 
+                : "bg-white border-gray-200 text-gray-500 hover:border-blue-200 hover:text-blue-600"
+            )}
+          >
+            <Search size={16} />
+            Deep Research
+            {researchMode && <CheckCircle2 size={12} className="ml-1" />}
+          </button>
+        </div>
+
+        <div className="flex gap-4 items-center">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ask a question..."
+            placeholder={researchMode ? "Enter research topic..." : (thinkingMode ? "Ask a complex question..." : "Ask a question...")}
             className="flex-1 bg-white border border-gray-200 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200 flex items-center justify-center min-w-[64px]"
+            className={cn(
+              "text-white p-4 rounded-2xl disabled:opacity-50 transition-all shadow-lg flex items-center justify-center min-w-[64px]",
+              researchMode ? "bg-blue-700 shadow-blue-200" : (thinkingMode ? "bg-amber-600 shadow-amber-200" : "bg-blue-600 shadow-blue-200")
+            )}
           >
             {loading ? <Loader2 className="animate-spin" size={28} /> : <Send size={28} />}
           </button>

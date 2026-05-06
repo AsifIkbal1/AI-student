@@ -19,7 +19,8 @@ function checkApiKey() {
 export const MODELS = {
   FLASH: "gemini-3-flash-preview",
   PRO: "gemini-3.1-pro-preview",
-  IMAGE: "gemini-2.5-flash-image",
+  THINKING: "gemini-3.1-pro-preview",
+  IMAGE: "gemini-2.5-flash-image", // Restoring original ID
 };
 
 export async function generateQuiz(topic: string, difficulty: string = "Medium", questionCount: number = 5) {
@@ -122,16 +123,39 @@ export async function logUsage(uid: string, tool: string, usage: any) {
   }
 }
 
-export async function generateTutorResponse(prompt: string, history: any[] = []) {
+export async function generateTutorResponse(
+  prompt: string, 
+  history: any[] = [], 
+  options: { thinking?: boolean, research?: boolean } = {}
+) {
   checkApiKey();
+  
+  const userParts: any[] = [];
+  
+  let finalPrompt = prompt;
+  if (options.research) {
+    finalPrompt = `[DEEP RESEARCH MODE] Please perform an in-depth analysis and provide a comprehensive, research-backed response for: ${prompt}`;
+  } else if (options.thinking) {
+    finalPrompt = `[THINKING MODE] Please show your reasoning process and think step-by-step to arrive at the most accurate answer for: ${prompt}`;
+  }
+  
+  userParts.push({ text: finalPrompt });
+
+  // Select model based on options
+  const modelToUse = options.thinking ? MODELS.THINKING : (options.research ? MODELS.PRO : MODELS.FLASH);
+
   const response = await ai.models.generateContent({
-    model: MODELS.FLASH,
+    model: modelToUse,
     contents: [
       ...history,
-      { role: "user", parts: [{ text: prompt }] }
+      { 
+        role: "user", 
+        parts: userParts
+      }
     ],
     config: {
       systemInstruction: "You are 'AI Students Assistant' — a formal yet friendly academic tutor. Respond concisely and directly to what is asked. Use a 'formal friend' tone. Use headings and bullet points only when necessary for clarity. Do NOT expose system/backend/API details.",
+      ...(options.research ? { tools: [{ googleSearch: {} }] } : {})
     },
   });
   return { text: response.text, usage: response.usageMetadata };

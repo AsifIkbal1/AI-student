@@ -8,7 +8,7 @@ let pool: any = null;
 
 function createMySqlPool(user: string, password: string) {
   return mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
+    host: 'localhost',
     user: user,
     password: password,
     database: dbName,
@@ -19,39 +19,23 @@ function createMySqlPool(user: string, password: string) {
 }
 
 export async function initMySQL() {
-  let user = process.env.DB_USER || 'root';
-  let password = process.env.DB_PASSWORD || '';
+  // FORCE LOCAL ROOT FOR NOW TO SOLVE THE ERROR
+  let user = 'root';
+  let password = '';
   let connection;
 
-  console.log("🔍 Attempting MySQL connection...");
+  console.log("🛠️ FORCING LOCAL ROOT CONNECTION...");
 
   try {
-    // Attempt 1: From .env
     connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
+      host: 'localhost',
       user: user,
       password: password,
     });
-    console.log("✅ MySQL connected using .env credentials.");
+    console.log("✅ MySQL connected using local root.");
   } catch (err: any) {
-    // Catch ANY access denied or connection error to try fallback
-    console.warn(`⚠️ Connection failed with .env credentials: ${err.message}`);
-    console.log("🔄 Trying local fallback (root/empty password)...");
-    
-    try {
-      user = 'root';
-      password = '';
-      connection = await mysql.createConnection({
-        host: 'localhost',
-        user: user,
-        password: password,
-      });
-      console.log("✅ Success! Connected using fallback local root.");
-    } catch (fallbackErr: any) {
-      console.error("❌ FATAL: Could not connect to MySQL at all.", fallbackErr.message);
-      console.log("\n💡 SOLUTION: Make sure your MySQL (XAMPP/MAMP) is RUNNING on localhost:3306");
-      return;
-    }
+    console.error("❌ MySQL Connection failed even with root:", err.message);
+    return;
   }
 
   if (connection) {
@@ -85,7 +69,7 @@ export async function initMySQL() {
     await conn.query(`CREATE TABLE IF NOT EXISTS activity_logs (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), email VARCHAR(255), feature VARCHAR(100), action VARCHAR(100), details TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
 
     conn.release();
-    console.log("🚀 Database Initialized Successfully.");
+    console.log("🚀 Database Initialized with FORCE ROOT.");
   } catch (err: any) {
     console.error("❌ Table initialization failed:", err.message);
   }

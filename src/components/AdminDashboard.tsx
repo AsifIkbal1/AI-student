@@ -279,7 +279,14 @@ export const AdminDashboard: React.FC = () => {
     fetchManualPayments();
     fetchAnalytics();
     fetchAdminData();
+    
     const paymentInterval = setInterval(fetchManualPayments, 30000); // Auto refresh every 30s
+    const supportInterval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/admin/support");
+        if (res.ok) setSupportTickets(await res.json());
+      } catch (err) { console.error("Auto-fetch support error:", err); }
+    }, 10000); // Auto refresh tickets every 10s
 
     // Mock chart data
     setChartData([
@@ -299,6 +306,7 @@ export const AdminDashboard: React.FC = () => {
       unsubscribeRecentLogs();
       unsubscribeLoginLogs();
       clearInterval(paymentInterval);
+      clearInterval(supportInterval);
     };
   }, []);
 

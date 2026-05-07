@@ -53,11 +53,14 @@ export const SupportPage: React.FC = () => {
         setSubject('');
         setMessage('');
         fetchTickets();
-        alert('Ticket submitted successfully!');
+        alert('✅ Ticket submitted successfully!');
+      } else {
+        const errorData = await res.json();
+        alert(`❌ Failed to submit ticket: ${errorData.error || 'Unknown error'}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit ticket:", err);
-      alert('Failed to submit ticket.');
+      alert('❌ Network Error: Failed to connect to the server.');
     } finally {
       setIsSubmitting(false);
     }

@@ -219,18 +219,25 @@ export const AdminDashboard: React.FC = () => {
       }
     };
 
+    const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
     const fetchAnalytics = async () => {
       try {
         const response = await fetch("/api/admin/analytics");
         if (response.ok) {
           const data = await response.json();
           setAnalytics(data);
+          setAnalyticsError(null);
           if (data.totalUsers !== undefined) {
             setStats(prev => ({ ...prev, totalUsers: data.totalUsers }));
           }
+        } else {
+          const errData = await response.json();
+          setAnalyticsError(errData.error || "Failed to load analytics");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching analytics:", error);
+        setAnalyticsError(error.message);
       }
     };
 
@@ -469,7 +476,14 @@ export const AdminDashboard: React.FC = () => {
         <StatCard title="Credits Remaining" value={(stats.remainingApiCredits || 850000).toLocaleString()} icon={Clock} trend="down" trendValue="15%" />
       </div>
 
-      {!analytics && (
+      {analyticsError && (
+        <div className="bg-red-50 border border-red-100 p-6 rounded-3xl text-red-700 mb-10 flex flex-col items-center justify-center">
+          <p className="font-bold">❌ Analytics Error:</p>
+          <p className="text-sm opacity-80">{analyticsError}</p>
+        </div>
+      )}
+
+      {!analytics && !analyticsError && (
         <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl text-blue-700 mb-10 flex items-center justify-center animate-pulse">
           <p className="font-bold">⏳ Waiting for analytics data from server...</p>
         </div>

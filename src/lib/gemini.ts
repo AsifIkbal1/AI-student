@@ -92,6 +92,7 @@ export function handleAIError(error: any) {
 
 export async function logUsage(uid: string, tool: string, usage: any) {
   try {
+    // 1. Log to Firebase (Legacy)
     await addDoc(collection(db, "usageLogs"), {
       uid,
       tool,
@@ -100,6 +101,19 @@ export async function logUsage(uid: string, tool: string, usage: any) {
       totalTokens: usage?.totalTokenCount || 0,
       timestamp: serverTimestamp(),
     });
+
+    // 2. Log to MySQL for Admin Dashboard (New)
+    fetch('/api/logs/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid,
+        feature: tool,
+        action: 'use',
+        details: { tokens: usage?.totalTokenCount || 0 }
+      })
+    }).catch(err => console.error("MySQL logging failed:", err));
+
   } catch (error) {
     console.error("Error logging usage:", error);
   }

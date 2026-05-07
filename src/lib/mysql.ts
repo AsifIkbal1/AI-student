@@ -76,7 +76,7 @@ export async function initMySQL() {
       try { await conn.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.def}`); } catch (e) {}
     }
 
-    await conn.query(`CREATE TABLE IF NOT EXISTS support_tickets (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL, subject VARCHAR(255) NOT NULL, message TEXT NOT NULL, status ENUM('open', 'closed') DEFAULT 'open', reply TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await conn.query(`CREATE TABLE IF NOT EXISTS support_tickets (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255) NOT NULL, email VARCHAR(255), subject VARCHAR(255) NOT NULL, message TEXT NOT NULL, status ENUM('open', 'closed') DEFAULT 'open', reply TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
     await conn.query(`CREATE TABLE IF NOT EXISTS system_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value TEXT)`);
     await conn.query(`INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES ('maintenance_mode', 'false'), ('total_api_limit', '1000000')`);
     await conn.query(`CREATE TABLE IF NOT EXISTS api_usage (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), model VARCHAR(100), prompt_tokens INT DEFAULT 0, completion_tokens INT DEFAULT 0, total_tokens INT DEFAULT 0, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);

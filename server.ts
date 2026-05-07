@@ -1356,9 +1356,11 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   app.post("/api/support/create", async (req, res) => {
     try {
       const { uid, email, subject, message } = req.body;
-      await pool.query(`INSERT INTO support_tickets (uid, email, subject, message) VALUES (?, ?, ?, ?)`, [uid, email, subject, message]);
+      console.log(`📩 New Support Ticket from ${uid}: ${subject}`);
+      await pool.query(`INSERT INTO support_tickets (uid, email, subject, message) VALUES (?, ?, ?, ?)`, [uid, email || 'no-email@provided.com', subject, message]);
       res.json({ success: true });
     } catch (error: any) {
+      console.error("❌ Error creating support ticket:", error.message);
       res.status(500).json({ error: error.message });
     }
   });

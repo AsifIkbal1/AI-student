@@ -43,7 +43,7 @@ export const SupportPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uid: profile?.uid,
-          email: profile?.email,
+          email: profile?.email || 'unknown@user.com',
           subject,
           message
         })

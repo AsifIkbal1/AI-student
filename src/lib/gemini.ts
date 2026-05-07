@@ -301,10 +301,10 @@ export async function generateSmartStudyPackage(input: string, fileData?: { data
 Turn any input into a complete study system.
 
 If a URL is provided, use the urlContext tool to analyze its content.
-If a file (PDF/Image) is provided, analyze its content thoroughly, including all text, tables, and visual hierarchies. Focus on deep understanding, factual accuracy, and connecting complex concepts.
+If a file (PDF/Image) is provided, analyze its content thoroughly, including all text, tables, and visual hierarchies. For images, perform high-accuracy OCR (Optical Character Recognition) to transcribe all printed or handwritten text correctly before analysis. Focus on deep understanding, factual accuracy, and connecting complex concepts.
 
 Follow these steps strictly:
-1. Deep Analysis: Understand the content, context, and nuances of the input.
+1. Deep Analysis & OCR: Perform detailed transcription of any uploaded image/PDF and understand the content context.
 2. Fact-Checking: Ensure all generated points are grounded in the provided material.
 3. Structured Response: Generate a high-quality study system in the following format:
 

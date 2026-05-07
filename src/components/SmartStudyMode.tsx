@@ -87,7 +87,9 @@ export const SmartStudyMode: React.FC = () => {
       } else if (selectedMode === "pdf") {
         finalInput = `PDF Analysis Request.\nContext: ${finalInput}\nPlease analyze the uploaded PDF and create a study package.`;
       } else if (selectedMode === "ocr") {
-        finalInput = `Image/OCR Analysis Request.\nContext: ${finalInput}\nPlease analyze the text in the uploaded image and create a study package.`;
+        finalInput = `HIGH-PRIORITY OCR ANALYSIS REQUEST.
+Context: ${input}
+Task: Transcribe ALL text from the uploaded image accurately (including handwritten notes, diagrams, or printed text) and then convert it into a comprehensive study package. Do not skip any details found in the image.`;
       }
 
       const { text, usage } = await generateSmartStudyPackage(

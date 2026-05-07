@@ -100,23 +100,6 @@ export async function logUsage(uid: string, tool: string, usage: any) {
       totalTokens: usage?.totalTokenCount || 0,
       timestamp: serverTimestamp(),
     });
-
-    // Sync to MySQL
-    fetch("/api/logs/activity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uid,
-        feature: tool,
-        action: "ai_generation",
-        details: {
-          promptTokens: usage?.promptTokenCount || 0,
-          candidatesTokens: usage?.candidatesTokenCount || 0,
-          totalTokens: usage?.totalTokenCount || 0
-        }
-      })
-    }).catch(console.error);
-
   } catch (error) {
     console.error("Error logging usage:", error);
   }
@@ -318,11 +301,12 @@ export async function generateSmartStudyPackage(input: string, fileData?: { data
 Turn any input into a complete study system.
 
 If a URL is provided, use the urlContext tool to analyze its content.
-If a file (PDF/Image) is provided, analyze its content thoroughly.
+If a file (PDF/Image) is provided, analyze its content thoroughly, including all text, tables, and visual hierarchies. Focus on deep understanding, factual accuracy, and connecting complex concepts.
 
 Follow these steps strictly:
-1. Understand the content deeply.
-2. Generate a structured response in the following format:
+1. Deep Analysis: Understand the content, context, and nuances of the input.
+2. Fact-Checking: Ensure all generated points are grounded in the provided material.
+3. Structured Response: Generate a high-quality study system in the following format:
 
 ---
 📄 1. Summary:

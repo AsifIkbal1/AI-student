@@ -79,9 +79,8 @@ export const SmartStudyMode: React.FC = () => {
 
       // Refine prompt based on mode
       let finalInput = input;
-      if (extractedText) {
-        finalInput = `${input}\n\n[Extracted from PDF]:\n${extractedText}`;
-      }
+      // Note: We no longer prepend extractedText for PDFs as we send the file directly now
+      // which is much more accurate.
 
       if (selectedMode === "youtube") {
         finalInput = `YouTube Video URL: ${ytUrl}\nContext: ${finalInput}\nPlease analyze this video and create a study package.`;
@@ -93,7 +92,7 @@ export const SmartStudyMode: React.FC = () => {
 
       const { text, usage } = await generateSmartStudyPackage(
         finalInput, 
-        (fileData && fileData.mimeType.startsWith("image/")) ? fileData : undefined
+        fileData
       );
       setResult(text || "");
       if (profile) {

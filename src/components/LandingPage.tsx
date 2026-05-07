@@ -10,25 +10,35 @@ export const LandingPage: React.FC = () => {
   const { login } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-mesh overflow-hidden">
+    <div className="min-h-screen bg-gradient-mesh bg-grid-pattern overflow-hidden relative">
+      {/* Background Decorative Elements */}
+      <div className="glow-spot top-[-10%] left-[-10%] opacity-60 animate-pulse" />
+      <div className="glow-spot bottom-[10%] right-[-10%] opacity-40 animate-pulse" style={{ animationDelay: '2s' }} />
+      <div className="glow-spot top-[40%] right-[20%] opacity-30 animate-float" />
+
       {/* Navbar */}
-      <nav className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/30">
-            <GraduationCap className="text-white" size={26} />
+      <nav className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center relative z-20">
+        <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/30 group-hover:rotate-12 transition-transform duration-300">
+            <GraduationCap className="text-white" size={28} />
           </div>
-          <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">AI Students</span>
+          <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-400 tracking-tighter">AI Students</span>
+        </div>
+        <div className="hidden md:flex items-center gap-8 text-sm font-bold text-gray-600 dark:text-gray-300">
+          <a href="#features" className="hover:text-blue-600 transition-colors">Features</a>
+          <a href="#testimonials" className="hover:text-blue-600 transition-colors">Testimonials</a>
+          <a href="#pricing" className="hover:text-blue-600 transition-colors">Pricing</a>
         </div>
         <button 
           onClick={login}
-          className="glass-panel text-blue-700 px-8 py-2.5 rounded-full font-bold hover:bg-white/60 transition-all shadow-sm"
+          className="glass-panel text-blue-700 dark:text-blue-400 px-8 py-3 rounded-2xl font-bold hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all shadow-sm border border-white/40"
         >
           Sign In
         </button>
       </nav>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-24 pb-32 text-center relative z-10">
+      <section className="max-w-7xl mx-auto px-6 pt-20 pb-32 text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -38,145 +48,120 @@ export const LandingPage: React.FC = () => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 glass-panel px-5 py-2 rounded-full text-sm font-bold mb-8 uppercase tracking-wider text-blue-700 border border-blue-200/50 shadow-sm"
+            className="inline-flex items-center gap-2 glass-panel px-6 py-2.5 rounded-full text-xs font-black mb-10 uppercase tracking-widest text-blue-700 dark:text-blue-400 border border-blue-200/50 shadow-xl shadow-blue-500/5"
           >
-            <Sparkles size={16} className="text-blue-600" />
-            The Future of Learning is Here
+            <Sparkles size={14} className="text-blue-600 animate-pulse" />
+            Empowering the Next Generation of Scholars
           </motion.div>
           
-          <h1 className="text-6xl md:text-8xl font-extrabold text-gray-900 mb-8 leading-tight tracking-tight">
-            Your Personal <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 drop-shadow-sm">AI-Powered</span> <br /> 
-            Academic Companion
+          <h1 className="text-6xl md:text-8xl font-black text-gray-900 dark:text-white mb-10 leading-[1.1] tracking-tight text-glow">
+            Master Your Studies <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 drop-shadow-2xl">With Precision AI</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
-            From solving complex math problems to generating structured study notes, 
-            AI Students is designed to help you excel in your academic journey.
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-14 leading-relaxed font-medium">
+            The all-in-one academic command center. Solve problems, generate notes, 
+            and accelerate your learning with state-of-the-art artificial intelligence.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-24">
             <button 
               onClick={login}
-              className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-10 py-5 rounded-2xl font-bold text-xl hover:shadow-2xl hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-3 transform hover:-translate-y-1"
+              className="group shimmer-effect bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-12 py-6 rounded-3xl font-bold text-xl hover:shadow-2xl hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-3 transform hover:-translate-y-1 active:scale-95"
             >
-              Get Started for Free 
+              Start Learning Free 
               <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
-              onClick={() => {
-                const featuresSection = document.getElementById('features');
-                featuresSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="glass-panel text-gray-900 px-10 py-5 rounded-2xl font-bold text-xl hover:bg-white/50 transition-all transform hover:-translate-y-1 cursor-pointer"
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+              className="glass-panel text-gray-900 dark:text-white px-12 py-6 rounded-3xl font-bold text-xl hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all transform hover:-translate-y-1 active:scale-95 border border-white/20"
             >
-              View All Features
+              Explore Tools
             </button>
           </div>
 
-          {/* Stats Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mt-12">
-            {[
-              { value: "10k+", label: "Active Students" },
-              { value: "15+", label: "AI Study Tools" },
-              { value: "99%", label: "Satisfaction Rate" },
-              { value: "24/7", label: "Instant Support" }
-            ].map((stat, idx) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + (idx * 0.1) }}
-                className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center shadow-sm"
-              >
-                <div className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-1">{stat.value}</div>
-                <div className="text-sm font-semibold text-gray-600">{stat.label}</div>
-              </motion.div>
-            ))}
+          {/* Trusted By Section */}
+          <div className="pt-10 border-t border-gray-200/30 max-w-5xl mx-auto">
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.3em] mb-10">Trusted by students worldwide</p>
+            <div className="flex flex-wrap justify-center items-center gap-10 md:gap-20 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+               <div className="text-2xl font-black text-gray-800 dark:text-white">HARVARD</div>
+               <div className="text-2xl font-black text-gray-800 dark:text-white">OXFORD</div>
+               <div className="text-2xl font-black text-gray-800 dark:text-white">STANFORD</div>
+               <div className="text-2xl font-black text-gray-800 dark:text-white">MIT</div>
+            </div>
           </div>
         </motion.div>
       </section>
 
       {/* Features Grid */}
-      <section id="features" className="py-32 relative z-10">
+      <section id="features" className="py-40 relative z-10 bg-white/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">Everything you need to succeed</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto font-medium">A comprehensive suite of AI tools tailored for students from school to university level.</p>
+          <div className="text-center mb-24">
+            <h2 className="text-5xl md:text-6xl font-black text-gray-900 dark:text-white mb-8 tracking-tight">Intelligence for every task</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium">Professional-grade AI tools designed specifically for the rigorous demands of modern academia.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {[
-              { icon: Sparkles, title: "AI Tutor", desc: "24/7 personalized academic support for any subject.", color: "from-blue-500 to-cyan-500" },
-              { icon: Brain, title: "Smart Notes", desc: "Convert any content into structured, easy-to-read study notes.", color: "from-purple-500 to-pink-500" },
-              { icon: Clock, title: "Study Planner", desc: "Personalized schedules with integrated Pomodoro timers.", color: "from-orange-500 to-red-500" },
-              { icon: ShieldCheck, title: "Doubt Solver", desc: "Instant step-by-step solutions for your most complex problems.", color: "from-emerald-500 to-teal-500" }
+              { icon: Sparkles, title: "AI Tutor", desc: "Expert academic support for math, science, and humanities.", color: "from-blue-600 to-indigo-600" },
+              { icon: Brain, title: "Smart Notes", desc: "Instantly transform complex lectures into structured study guides.", color: "from-purple-600 to-fuchsia-600" },
+              { icon: FileText, title: "PDF Analyst", desc: "Deep-dive into research papers and textbooks with pinpoint accuracy.", color: "from-orange-600 to-amber-600" },
+              { icon: ShieldCheck, title: "Pro Solutions", desc: "Step-by-step logic and reasoning for your toughest assignments.", color: "from-emerald-600 to-teal-600" }
             ].map((feature, idx) => (
               <motion.div 
                 key={idx}
-                whileHover={{ y: -15, scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="glass-panel p-8 rounded-3xl cursor-pointer group shadow-sm hover:shadow-xl hover:shadow-blue-500/10"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ y: -20 }}
+                className="glass-panel p-10 rounded-[2.5rem] cursor-pointer group shadow-xl shadow-blue-500/5 hover:shadow-blue-500/10 border border-white/40 dark:border-white/10 shimmer-effect"
               >
                 <div className={cn(
-                  "p-4 rounded-2xl w-fit mb-6 bg-gradient-to-br text-white shadow-lg",
+                  "p-5 rounded-2xl w-fit mb-8 bg-gradient-to-br text-white shadow-2xl transform group-hover:rotate-6 transition-transform",
                   feature.color
                 )}>
-                  <feature.icon size={32} />
+                  <feature.icon size={36} />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-700 transition-colors">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed font-medium">{feature.desc}</p>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-5 group-hover:text-blue-600 transition-colors">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed font-medium text-lg">{feature.desc}</p>
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Policies & Contact Section */}
-      <section className="py-24 relative z-10 bg-white/30 backdrop-blur-md border-y border-white/40">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {[
-              { icon: Shield, title: "Privacy Policy", link: "/policy/privacy", color: "text-blue-600", bg: "bg-blue-50" },
-              { icon: FileText, title: "Terms of Service", link: "/policy/terms", color: "text-purple-600", bg: "bg-purple-50" },
-              { icon: Mail, title: "Contact Us", link: "/policy/contact", color: "text-pink-600", bg: "bg-pink-50" }
-            ].map((item, idx) => (
-              <Link 
-                key={idx} 
-                to={item.link}
-                className="group p-6 rounded-3xl transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 flex flex-col items-center text-center"
-              >
-                <div className={cn("p-4 rounded-2xl mb-4 transition-transform group-hover:scale-110", item.bg)}>
-                  <item.icon className={item.color} size={28} />
-                </div>
-                <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{item.title}</h4>
-                <p className="text-xs text-gray-500 mt-2 font-medium opacity-0 group-hover:opacity-100 transition-opacity">Read Details →</p>
-              </Link>
             ))}
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 relative z-10 glass-panel border-x-0 border-b-0 rounded-none bg-white/20">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <GraduationCap className="text-white" size={20} />
+      <footer className="py-20 relative z-10 glass-panel border-x-0 border-b-0 rounded-none bg-white/40 dark:bg-gray-900/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-12 pb-12 border-b border-gray-200/50 dark:border-gray-800/50">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 p-2 rounded-xl">
+                <GraduationCap className="text-white" size={24} />
+              </div>
+              <span className="text-2xl font-black text-gray-900 dark:text-white">AI Students</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">AI Students</span>
+            
+            <div className="flex flex-wrap justify-center gap-10 text-sm font-black text-gray-500 uppercase tracking-widest">
+              <Link to="/policy/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
+              <Link to="/policy/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
+              <Link to="/policy/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
+            </div>
+
+            <div className="flex gap-6">
+               <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"><Mail size={18}/></div>
+            </div>
           </div>
           
-          <div className="flex flex-wrap justify-center gap-8 text-sm font-bold text-gray-600">
-            <Link to="/policy/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
-            <Link to="/policy/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
-            <Link to="/policy/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
+          <div className="pt-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-sm text-gray-500 font-bold">© 2026 AI Students. Designed for elite academic performance.</p>
+            <div className="flex items-center gap-2">
+              <Shield size={14} className="text-emerald-500" />
+              <span className="text-xs font-black text-gray-400 uppercase tracking-tighter">Secure & Verified Platform</span>
+            </div>
           </div>
-
-          <p className="text-sm text-gray-500 font-medium">© 2026 AI Students. All rights reserved.</p>
         </div>
       </footer>
-
     </div>
   );
 };

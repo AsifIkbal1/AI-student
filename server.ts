@@ -238,17 +238,14 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         messages: messages as any[],
         response_format
       });
-      // Log usage to MySQL
-      try {
-        const usage = response.usage;
-        if (usage) {
-          await pool.query(`
-            INSERT INTO api_usage (uid, model, prompt_tokens, completion_tokens, total_tokens)
-            VALUES (?, ?, ?, ?, ?)
-          `, [req.body.uid || 'unknown', response.model, usage.prompt_tokens, usage.completion_tokens, usage.total_tokens]);
-        }
-      } catch (logErr) {
-        console.error("Error logging API usage:", logErr);
+      // Log usage to MySQL (Asynchronous)
+      const usage = response.usage;
+      if (usage) {
+        pool.query(`
+          INSERT INTO api_usage (uid, model, prompt_tokens, completion_tokens, total_tokens)
+          VALUES (?, ?, ?, ?, ?)
+        `, [req.body.uid || 'unknown', response.model, usage.prompt_tokens, usage.completion_tokens, usage.total_tokens])
+        .catch(logErr => console.error("Async API logging error (OpenAI):", logErr));
       }
 
       res.json({ 
@@ -286,17 +283,14 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         config: { responseMimeType }
       });
 
-      // Log usage to MySQL
-      try {
-        const usage = response.usageMetadata;
-        if (usage) {
-          await pool.query(`
-            INSERT INTO api_usage (uid, model, prompt_tokens, completion_tokens, total_tokens)
-            VALUES (?, ?, ?, ?, ?)
-          `, [req.body.uid || 'unknown', MODELS.GEMINI, usage.prompt_tokens || 0, usage.candidatesTokenCount || 0, usage.totalTokenCount || 0]);
-        }
-      } catch (logErr) {
-        console.error("Error logging API usage:", logErr);
+      // Log usage to MySQL (Asynchronous)
+      const usage = response.usageMetadata;
+      if (usage) {
+        pool.query(`
+          INSERT INTO api_usage (uid, model, prompt_tokens, completion_tokens, total_tokens)
+          VALUES (?, ?, ?, ?, ?)
+        `, [req.body.uid || 'unknown', MODELS.GEMINI, usage.prompt_tokens || 0, usage.candidatesTokenCount || 0, usage.totalTokenCount || 0])
+        .catch(logErr => console.error("Async API logging error (Gemini):", logErr));
       }
 
       res.json({ 
@@ -338,12 +332,13 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         photoURL = VALUES(photoURL)
       `, [uid, email, displayName, photoURL, referralCode, finalReferredBy]);
 
-      // 2. If it's a login, record the login log
+      // 2. If it's a login, record the login log (Asynchronous)
       if (isLogin) {
-        await pool.query(`
+        pool.query(`
           INSERT INTO login_logs (uid, email, userAgent)
           VALUES (?, ?, ?)
-        `, [uid, email, userAgent]);
+        `, [uid, email, userAgent])
+        .catch(err => console.error("Async login logging error:", err));
       }
 
       // 3. Fetch current status and role
@@ -1231,16 +1226,13 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         }
       }
 
-      // Log to MySQL
+      // Log to MySQL (Asynchronous)
       if (userId) {
-        try {
-          await pool.query(`
-            INSERT INTO activity_logs (uid, feature, action, details)
-            VALUES (?, ?, ?, ?)
-          `, [userId, "CortexStudio", "agent_chat", JSON.stringify({ agentId, prompt })]);
-        } catch (mysqlErr) {
-          console.error("MySQL Insert Error in Cortex Chat:", mysqlErr);
-        }
+        pool.query(`
+          INSERT INTO activity_logs (uid, feature, action, details)
+          VALUES (?, ?, ?, ?)
+        `, [userId, "CortexStudio", "agent_chat", JSON.stringify({ agentId, prompt })])
+        .catch(mysqlErr => console.error("Async activity logging error (Cortex Chat):", mysqlErr));
       }
 
       res.write("data: [DONE]\n\n");
@@ -1293,16 +1285,13 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Log to MySQL
+      // Log to MySQL (Asynchronous)
       if (userId) {
-        try {
-          await pool.query(`
-            INSERT INTO activity_logs (uid, feature, action, details)
-            VALUES (?, ?, ?, ?)
-          `, [userId, "CortexStudio", "create_task", JSON.stringify({ title, agentId, schedule })]);
-        } catch (mysqlErr) {
-          console.error("MySQL Insert Error in Cortex Task:", mysqlErr);
-        }
+        pool.query(`
+          INSERT INTO activity_logs (uid, feature, action, details)
+          VALUES (?, ?, ?, ?)
+        `, [userId, "CortexStudio", "create_task", JSON.stringify({ title, agentId, schedule })])
+        .catch(mysqlErr => console.error("Async activity logging error (Cortex Task):", mysqlErr));
       }
 
       res.json({ id: docRef.id });

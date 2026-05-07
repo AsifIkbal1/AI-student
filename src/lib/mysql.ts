@@ -23,30 +23,33 @@ export async function initMySQL() {
   let password = process.env.DB_PASSWORD || '';
   let connection;
 
+  console.log("🔍 Attempting MySQL connection...");
+
   try {
+    // Attempt 1: From .env
     connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
-      user: user,
-      password: password,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
     });
+    console.log("✅ MySQL connected using .env credentials.");
   } catch (err: any) {
-    if (err.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.warn("⚠️ MySQL Access Denied for .env credentials. Trying local root fallback...");
-      try {
-        user = 'root';
-        password = '';
-        connection = await mysql.createConnection({
-          host: 'localhost',
-          user: user,
-          password: password,
-        });
-        console.log("✅ Fallback connection successful!");
-      } catch (fallbackErr) {
-        console.error("❌ All MySQL connection attempts failed.", fallbackErr);
-        return;
-      }
-    } else {
-      console.error("❌ MySQL Connection error:", err);
+    // Catch ANY access denied or connection error to try fallback
+    console.warn(`⚠️ Connection failed with .env credentials: ${err.message}`);
+    console.log("🔄 Trying local fallback (root/empty password)...");
+    
+    try {
+      user = 'root';
+      password = '';
+      connection = await mysql.createConnection({
+        host: 'localhost',
+        user: user,
+        password: password,
+      });
+      console.log("✅ Success! Connected using fallback local root.");
+    } catch (fallbackErr: any) {
+      console.error("❌ FATAL: Could not connect to MySQL at all.", fallbackErr.message);
+      console.log("\n💡 SOLUTION: Make sure your MySQL (XAMPP/MAMP) is RUNNING on localhost:3306");
       return;
     }
   }
@@ -62,7 +65,6 @@ export async function initMySQL() {
     const conn = await pool.getConnection();
     await conn.query(`CREATE TABLE IF NOT EXISTS users (uid VARCHAR(255) PRIMARY KEY, email VARCHAR(255) NOT NULL, displayName VARCHAR(255), photoURL TEXT, role ENUM('user', 'admin') DEFAULT 'user', status ENUM('active', 'banned') DEFAULT 'active', createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
     
-    // Add missing columns
     const columns = [
       { name: 'status', def: "ENUM('active', 'banned') DEFAULT 'active'" },
       { name: 'referral_code', def: "VARCHAR(50) UNIQUE" },
@@ -83,23 +85,21 @@ export async function initMySQL() {
     await conn.query(`CREATE TABLE IF NOT EXISTS activity_logs (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), email VARCHAR(255), feature VARCHAR(100), action VARCHAR(100), details TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
 
     conn.release();
-    console.log("🚀 MySQL Database Initialized.");
-  } catch (err) {
-    console.error("❌ Failed to initialize tables:", err);
+    console.log("🚀 Database Initialized Successfully.");
+  } catch (err: any) {
+    console.error("❌ Table initialization failed:", err.message);
   }
 }
 
-// Ensure pool is initialized before queries
 const ensurePool = async () => {
   if (!pool) {
-    // Wait for initMySQL to complete if called concurrently
     let attempts = 0;
     while (!pool && attempts < 10) {
       await new Promise(r => setTimeout(r, 500));
       attempts++;
     }
   }
-  if (!pool) throw new Error("Database Pool not initialized. Check your MySQL connection.");
+  if (!pool) throw new Error("Database not connected. Please make sure MySQL is running on your machine.");
   return pool;
 };
 

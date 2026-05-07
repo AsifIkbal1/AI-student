@@ -378,13 +378,17 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   // --- Admin Analytics Endpoint ---
   app.get("/api/admin/analytics", async (req, res) => {
     try {
-      // 1. Total Revenue
+      // 1. Total Revenue & Subscriptions
       const [revenueResult]: any = await pool.query(`
         SELECT SUM(amount) as totalRevenue, COUNT(*) as totalSubscriptions 
         FROM subscriptions
       `);
 
-      // 2. Most Used Features (Top 5)
+      // 2. Total Users Count
+      const [userCountResult]: any = await pool.query(`SELECT COUNT(*) as count FROM users`);
+      const totalUsers = userCountResult[0].count || 0;
+
+      // 3. Most Used Features (Top 5)
       const [topFeaturesResult]: any = await pool.query(`
         SELECT feature as name, COUNT(*) as value 
         FROM activity_logs 
@@ -394,7 +398,7 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
         LIMIT 5
       `);
 
-      // 3. Daily Usage (Last 7 Days)
+      // 4. Daily Usage (Last 7 Days)
       const [dailyUsageResult]: any = await pool.query(`
         SELECT DATE(timestamp) as date, COUNT(*) as actions, COUNT(DISTINCT uid) as uniqueUsers
         FROM activity_logs
@@ -413,6 +417,7 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
       res.json({
         totalRevenue: revenueResult[0].totalRevenue || 0,
         totalSubscriptions: revenueResult[0].totalSubscriptions || 0,
+        totalUsers: totalUsers,
         topFeatures: topFeaturesResult,
         dailyUsage: formattedDailyUsage
       });

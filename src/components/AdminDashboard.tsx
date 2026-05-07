@@ -225,6 +225,9 @@ export const AdminDashboard: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           setAnalytics(data);
+          if (data.totalUsers !== undefined) {
+            setStats(prev => ({ ...prev, totalUsers: data.totalUsers }));
+          }
         }
       } catch (error) {
         console.error("Error fetching analytics:", error);

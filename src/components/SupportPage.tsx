@@ -29,7 +29,12 @@ export const SupportPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !message.trim()) return;
+    if (!subject.trim() || !message.trim() || isSubmitting) return;
+    
+    if (!profile?.uid) {
+      alert("Please wait for your profile to load or try logging in again.");
+      return;
+    }
     
     setIsSubmitting(true);
     try {

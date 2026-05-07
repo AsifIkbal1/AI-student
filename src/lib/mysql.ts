@@ -4,158 +4,116 @@ dotenv.config();
 
 const dbName = process.env.DB_NAME || 'paid_system_db';
 
-// Create connection pool
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: dbName,
-  waitForConnections: true,
-  connectionLimit: 20,
-  queueLimit: 0
-});
+let pool: any = null;
 
-// Initialize database tables if they don't exist
+function createMySqlPool(user: string, password: string) {
+  return mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: user,
+    password: password,
+    database: dbName,
+    waitForConnections: true,
+    connectionLimit: 20,
+    queueLimit: 0
+  });
+}
+
 export async function initMySQL() {
+  let user = process.env.DB_USER || 'root';
+  let password = process.env.DB_PASSWORD || '';
+  let connection;
+
   try {
-    // First, connect WITHOUT database to create it if missing
-    const tempConnection = await mysql.createConnection({
+    connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
+      user: user,
+      password: password,
     });
-    
-    await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
-    await tempConnection.end();
-
-    const connection = await pool.getConnection();
-    
-    // Create users table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        uid VARCHAR(255) PRIMARY KEY,
-        email VARCHAR(255) NOT NULL,
-        displayName VARCHAR(255),
-        photoURL TEXT,
-        role ENUM('user', 'admin') DEFAULT 'user',
-        status ENUM('active', 'banned') DEFAULT 'active',
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Safely add status column if it doesn't exist (for existing databases)
-    try {
-      await connection.query(`
-        ALTER TABLE users ADD COLUMN status ENUM('active', 'banned') DEFAULT 'active'
-      `);
-    } catch (e: any) {
-      // Ignore error if column already exists (Error 1060: Duplicate column name)
-      if (e.code !== 'ER_DUP_FIELDNAME') {
-        console.error("Error adding status column:", e);
+  } catch (err: any) {
+    if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.warn("⚠️ MySQL Access Denied for .env credentials. Trying local root fallback...");
+      try {
+        user = 'root';
+        password = '';
+        connection = await mysql.createConnection({
+          host: 'localhost',
+          user: user,
+          password: password,
+        });
+        console.log("✅ Fallback connection successful!");
+      } catch (fallbackErr) {
+        console.error("❌ All MySQL connection attempts failed.", fallbackErr);
+        return;
       }
+    } else {
+      console.error("❌ MySQL Connection error:", err);
+      return;
+    }
+  }
+
+  if (connection) {
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+    await connection.end();
+  }
+
+  pool = createMySqlPool(user, password);
+  
+  try {
+    const conn = await pool.getConnection();
+    await conn.query(`CREATE TABLE IF NOT EXISTS users (uid VARCHAR(255) PRIMARY KEY, email VARCHAR(255) NOT NULL, displayName VARCHAR(255), photoURL TEXT, role ENUM('user', 'admin') DEFAULT 'user', status ENUM('active', 'banned') DEFAULT 'active', createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    
+    // Add missing columns
+    const columns = [
+      { name: 'status', def: "ENUM('active', 'banned') DEFAULT 'active'" },
+      { name: 'referral_code', def: "VARCHAR(50) UNIQUE" },
+      { name: 'referred_by', def: "VARCHAR(255)" },
+      { name: 'referral_earnings', def: "INT DEFAULT 0" }
+    ];
+
+    for (const col of columns) {
+      try { await conn.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.def}`); } catch (e) {}
     }
 
-    // Safely add referral columns if they don't exist
-    try {
-      await connection.query(`
-        ALTER TABLE users 
-        ADD COLUMN referral_code VARCHAR(50) UNIQUE,
-        ADD COLUMN referred_by VARCHAR(255),
-        ADD COLUMN referral_earnings INT DEFAULT 0
-      `);
-    } catch (e: any) {
-      if (e.code !== 'ER_DUP_FIELDNAME') {
-        console.error("Error adding referral columns:", e);
-      }
-    }
+    await conn.query(`CREATE TABLE IF NOT EXISTS support_tickets (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL, subject VARCHAR(255) NOT NULL, message TEXT NOT NULL, status ENUM('open', 'closed') DEFAULT 'open', reply TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await conn.query(`CREATE TABLE IF NOT EXISTS system_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value TEXT)`);
+    await conn.query(`INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES ('maintenance_mode', 'false'), ('total_api_limit', '1000000')`);
+    await conn.query(`CREATE TABLE IF NOT EXISTS api_usage (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), model VARCHAR(100), prompt_tokens INT DEFAULT 0, completion_tokens INT DEFAULT 0, total_tokens INT DEFAULT 0, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await conn.query(`CREATE TABLE IF NOT EXISTS login_logs (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), email VARCHAR(255), userAgent TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await conn.query(`CREATE TABLE IF NOT EXISTS subscriptions (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), email VARCHAR(255), planId VARCHAR(50), interval_period VARCHAR(20), amount DECIMAL(10, 2), paymentMethod VARCHAR(50), transactionId VARCHAR(100), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await conn.query(`CREATE TABLE IF NOT EXISTS activity_logs (id INT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(255), email VARCHAR(255), feature VARCHAR(100), action VARCHAR(100), details TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
 
-    // Create support tickets table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS support_tickets (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        uid VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        subject VARCHAR(255) NOT NULL,
-        message TEXT NOT NULL,
-        status ENUM('open', 'closed') DEFAULT 'open',
-        reply TEXT,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create system settings table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS system_settings (
-        setting_key VARCHAR(100) PRIMARY KEY,
-        setting_value TEXT
-      )
-    `);
-
-    // Insert default settings if they don't exist
-    await connection.query(`
-      INSERT IGNORE INTO system_settings (setting_key, setting_value) 
-      VALUES ('maintenance_mode', 'false'), ('total_api_limit', '1000000')
-    `);
-
-    // Create API usage table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS api_usage (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        uid VARCHAR(255),
-        model VARCHAR(100),
-        prompt_tokens INT DEFAULT 0,
-        completion_tokens INT DEFAULT 0,
-        total_tokens INT DEFAULT 0,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create login logs table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS login_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        uid VARCHAR(255),
-        email VARCHAR(255),
-        userAgent TEXT,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
-      )
-    `);
-
-    // Create subscriptions table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS subscriptions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        uid VARCHAR(255),
-        email VARCHAR(255),
-        planId VARCHAR(50),
-        interval_period VARCHAR(20),
-        amount DECIMAL(10, 2),
-        paymentMethod VARCHAR(50),
-        transactionId VARCHAR(100),
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
-      )
-    `);
-
-    // Create activity logs table
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS activity_logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        uid VARCHAR(255),
-        email VARCHAR(255),
-        feature VARCHAR(100),
-        action VARCHAR(100),
-        details TEXT,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    connection.release();
-    console.log("MySQL Database initialized successfully.");
-  } catch (error) {
-    console.error("MySQL Database initialization failed:", error);
+    conn.release();
+    console.log("🚀 MySQL Database Initialized.");
+  } catch (err) {
+    console.error("❌ Failed to initialize tables:", err);
   }
 }
 
-export default pool;
+// Ensure pool is initialized before queries
+const ensurePool = async () => {
+  if (!pool) {
+    // Wait for initMySQL to complete if called concurrently
+    let attempts = 0;
+    while (!pool && attempts < 10) {
+      await new Promise(r => setTimeout(r, 500));
+      attempts++;
+    }
+  }
+  if (!pool) throw new Error("Database Pool not initialized. Check your MySQL connection.");
+  return pool;
+};
+
+export default {
+  query: async (...args: any[]) => {
+    const p = await ensurePool();
+    return p.query(...args);
+  },
+  getConnection: async () => {
+    const p = await ensurePool();
+    return p.getConnection();
+  },
+  execute: async (...args: any[]) => {
+    const p = await ensurePool();
+    return p.execute(...args);
+  }
+};

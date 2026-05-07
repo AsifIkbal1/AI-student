@@ -46,6 +46,7 @@ export const AdminDashboard: React.FC = () => {
   const [manualPayments, setManualPayments] = useState<any[]>([]);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'audit' | 'support' | 'settings'>('overview');
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
@@ -218,8 +219,6 @@ export const AdminDashboard: React.FC = () => {
         setPaymentError(error.message);
       }
     };
-
-    const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
     const fetchAnalytics = async () => {
       try {

@@ -877,7 +877,34 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     const { paymentId } = req.body;
     try {
       if (!db) return res.status(500).json({ error: "Database not initialized" });
+      
+      // 1. Fetch payment to get userId
+      const paymentDoc = await db.collection("manual_payments").doc(paymentId).get();
+      if (!paymentDoc.exists) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+      const paymentData = paymentDoc.data();
+      const uid = paymentData?.uid;
+
+      // 2. Update payment status
       await db.collection("manual_payments").doc(paymentId).update({ status: "rejected" });
+      
+      // 3. Revoke access in Firestore
+      if (uid) {
+        await db.collection("users").doc(uid).update({
+          "subscription.active": false,
+          "subscription.plan": "free",
+          isApproved: false
+        });
+
+        // 4. Delete from MySQL subscriptions
+        try {
+          await pool.query(`DELETE FROM subscriptions WHERE transactionId = ?`, [paymentId]);
+        } catch (mysqlErr) {
+          console.error("MySQL Delete Error during rejection:", mysqlErr);
+        }
+      }
+
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error rejecting payment:", error);

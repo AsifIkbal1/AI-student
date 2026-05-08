@@ -604,22 +604,24 @@ export const AdminDashboard: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      {payment.status === "pending" && (
-                        <div className="flex gap-2 justify-end">
+                      <div className="flex gap-2 justify-end">
+                        {(payment.status === "pending" || payment.status === "rejected") && (
                           <button
                             onClick={() => handleApprovePayment(payment.id, payment)}
                             className="px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm"
                           >
                             Approve
                           </button>
+                        )}
+                        {(payment.status === "pending" || payment.status === "approved") && (
                           <button
                             onClick={() => handleRejectPayment(payment.id)}
                             className="px-4 py-1.5 rounded-xl text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-all"
                           >
                             Reject
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

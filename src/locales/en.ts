@@ -24,6 +24,7 @@ export const en = {
   sign_out: "Sign Out",
   neurotest_ai: "NeuroTest AI",
   digital_notes: "Digital Notes",
+  knowledge_base: "Multi-PDF Knowledge Base",
   
   // Dashboard
   welcome_back: "Welcome back",
@@ -59,6 +60,7 @@ export const en = {
   desc_smart_resources: "Get AI-recommended academic papers, books, and videos based on your study topic.",
   desc_cortex_studio: "Build and automate your personal AI agents with memory and tools.",
   desc_digital_notes: "Extract text from images, summarize, paraphrase and get keywords for free.",
+  desc_knowledge_base: "Chat with multiple documents simultaneously using collective intelligence.",
   
   // Auth/Denied
   access_denied: "Access Denied",

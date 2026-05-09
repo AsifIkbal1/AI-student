@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { FileText, Loader2, Save, Sparkles } from "lucide-react";
 import { generateNotes, logUsage, handleAIError } from "../lib/ai";
+import { audioAI } from "../lib/audio";
+import { Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
 import { collection, addDoc } from "firebase/firestore";
@@ -15,6 +17,7 @@ export const AINoteMaker: React.FC = () => {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handleGenerate = async () => {
     if (!content.trim() || loading) return;
@@ -63,6 +66,19 @@ export const AINoteMaker: React.FC = () => {
     }
   };
 
+  const handleToggleAudio = () => {
+    if (isPlaying) {
+      audioAI.stop();
+      setIsPlaying(false);
+    } else {
+      audioAI.speak(notes, {
+        onEnd: () => setIsPlaying(false),
+        onError: () => setIsPlaying(false)
+      });
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div className="w-full max-w-[98%] mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -71,14 +87,27 @@ export const AINoteMaker: React.FC = () => {
           <p className="text-gray-500">Convert long text into structured notes</p>
         </div>
         {notes && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-            Save Note
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleToggleAudio}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all ${
+                isPlaying 
+                  ? "bg-amber-100 text-amber-700 border border-amber-200" 
+                  : "bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100"
+              }`}
+            >
+              {isPlaying ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              {isPlaying ? "Stop Listening" : "Listen to Notes"}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+              Save Note
+            </button>
+          </div>
         )}
       </div>
 

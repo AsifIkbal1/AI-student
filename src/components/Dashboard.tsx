@@ -18,7 +18,8 @@ import {
   Network,
   Library,
   Search,
-  Cpu
+  Cpu,
+  Database
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
@@ -276,6 +277,16 @@ export const Dashboard: React.FC = () => {
       description: t("desc_cortex_studio"),
       path: "/cortex-studio",
       color: "from-indigo-600 to-violet-700",
+      category: "Tools",
+      badge: "New" as const,
+      premiumOnly: true
+    },
+    {
+      icon: Database,
+      title: t("knowledge_base"),
+      description: t("desc_knowledge_base"),
+      path: "/knowledge-base",
+      color: "from-blue-700 to-indigo-800",
       category: "Tools",
       badge: "New" as const,
       premiumOnly: true

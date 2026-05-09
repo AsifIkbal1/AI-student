@@ -4,6 +4,8 @@ import {
   ShieldCheck, Bot, RefreshCw, AlertTriangle, ChevronDown, ChevronUp, Zap
 } from "lucide-react";
 import { generateTutorResponse, analyzeEssay, logUsage, handleAIError } from "../lib/ai";
+import { audioAI } from "../lib/audio";
+import { Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "./AuthContext";
@@ -68,6 +70,7 @@ export const AIEssayWriter: React.FC = () => {
   const [essay, setEssay] = useState("");
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<{
@@ -157,6 +160,18 @@ export const AIEssayWriter: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
+  };
+  const handleToggleAudio = (text: string) => {
+    if (isPlaying) {
+      audioAI.stop();
+      setIsPlaying(false);
+    } else {
+      audioAI.speak(text, {
+        onEnd: () => setIsPlaying(false),
+        onError: () => setIsPlaying(false)
+      });
+      setIsPlaying(true);
+    }
   };
 
   return (
@@ -412,12 +427,25 @@ export const AIEssayWriter: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Full Draft</h3>
-                <button
-                  onClick={() => copyToClipboard(essay, "essay")}
-                  className="text-gray-400 hover:text-blue-600 transition-colors"
-                >
-                  {copied === "essay" ? <CheckCircle2 size={20} className="text-emerald-500" /> : <Copy size={20} />}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleToggleAudio(essay)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                      isPlaying 
+                        ? "bg-amber-100 text-amber-700" 
+                        : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                    }`}
+                  >
+                    {isPlaying ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                    {isPlaying ? "Stop" : "Listen"}
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(essay, "essay")}
+                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                  >
+                    {copied === "essay" ? <CheckCircle2 size={20} className="text-emerald-500" /> : <Copy size={20} />}
+                  </button>
+                </div>
               </div>
               <div className="prose prose-blue max-w-none">
                 <ReactMarkdown>{essay}</ReactMarkdown>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, Loader2, Clock, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { Calendar, Loader2, Clock, CheckCircle2, Plus, Trash2, Zap, AlertCircle } from "lucide-react";
 import { generateStudyPlan, logUsage, handleAIError } from "../lib/ai";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
@@ -12,6 +12,8 @@ export const AIStudyPlanner: React.FC = () => {
   const [plan, setPlan] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'standard' | 'exam'>('standard');
+  const [examDate, setExamDate] = useState("");
 
   const handleGenerate = async () => {
     if (!topic.trim() || loading) return;
@@ -32,6 +34,36 @@ export const AIStudyPlanner: React.FC = () => {
       }
     } catch (error) {
       setError(handleAIError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExamPrep = async () => {
+    if (!topic.trim() || !examDate || loading) return;
+
+    if (profile && profile.role !== "admin" && profile.credits < 5) {
+      setError("Error: Exam Prep mode requires 5 credits.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/planner/exam-prep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, examDate, uid: profile?.uid })
+      });
+      const data = await response.json();
+      if (data.plan) {
+        setPlan(data.plan);
+        if (profile) await deductCredits(5);
+      } else {
+        throw new Error(data.error || "Failed to generate plan");
+      }
+    } catch (error: any) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -75,14 +107,59 @@ export const AIStudyPlanner: React.FC = () => {
                   {error}
                 </div>
               )}
-              <button
-                onClick={handleGenerate}
-                disabled={loading || !topic.trim()}
-                className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="animate-spin" size={24} /> : <Calendar size={24} />}
-                Generate Study Plan
-              </button>
+              <div className="flex p-1 bg-gray-100 rounded-xl">
+                <button 
+                  onClick={() => setMode('standard')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'standard' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
+                >
+                  Standard Plan
+                </button>
+                <button 
+                  onClick={() => setMode('exam')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'exam' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-500'}`}
+                >
+                  Exam Prep 🔥
+                </button>
+              </div>
+
+              {mode === 'exam' ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Exam Date</label>
+                    <input
+                      type="date"
+                      value={examDate}
+                      onChange={(e) => setExamDate(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                    />
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex gap-2">
+                    <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-amber-700 leading-tight">
+                      <strong>Crash Course Mode:</strong> We'll create a high-intensity 7-day schedule to get you ready fast.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleExamPrep}
+                    disabled={loading || !topic.trim() || !examDate}
+                    className="w-full bg-amber-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-200"
+                  >
+                    {loading ? <Loader2 className="animate-spin" size={24} /> : <Zap size={24} />}
+                    Start 7-Day Crash Course
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <button
+                    onClick={handleGenerate}
+                    disabled={loading || !topic.trim()}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 className="animate-spin" size={24} /> : <Calendar size={24} />}
+                    Generate Study Plan
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

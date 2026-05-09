@@ -1001,6 +1001,79 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
     }
   });
 
+  // --- Multi-PDF Knowledge Base ---
+  app.post("/api/knowledge-base/chat", async (req, res) => {
+    const { prompt, files, history, uid } = req.body;
+    let geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    if (geminiKey.startsWith('"') && geminiKey.endsWith('"')) geminiKey = geminiKey.slice(1, -1);
+    
+    if (!geminiKey) return res.status(401).json({ error: "Gemini API Key missing" });
+
+    try {
+      const genAI = getGemini();
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }); // Use Pro for complex multi-pdf tasks
+      
+      // Construct context from all files
+      const context = files.map((f: any) => `[File: ${f.name}]\n${f.content}`).join("\n\n---\n\n");
+      
+      const chat = model.startChat({
+        history: history || [],
+        generationConfig: { maxOutputTokens: 2048 },
+      });
+
+      const fullPrompt = `You are a Knowledge Base Assistant. You have access to multiple documents provided below.
+      Use the provided context to answer the user's question accurately. If the information is not in the documents, state that.
+      
+      --- CONTEXT DOCUMENTS ---
+      ${context}
+      --------------------------
+      
+      User Question: ${prompt}`;
+
+      const result = await chat.sendMessage(fullPrompt);
+      const response = await result.response;
+      
+      res.json({ text: response.text() });
+    } catch (error: any) {
+      console.error("Knowledge Base Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Browser Extension API ---
+  app.post("/api/extension/save", async (req, res) => {
+    const { uid, title, content, url, type } = req.body;
+    if (!db) return res.status(500).json({ error: "Database not initialized" });
+    if (!uid) return res.status(401).json({ error: "Authentication required" });
+
+    try {
+      // Save to Firestore notes collection
+      const docRef = await db.collection("notes").add({
+        uid,
+        title: title || "Extension Clip",
+        content: `Source: ${url}\n\n${content}`,
+        sourceType: "extension",
+        type: type || "summary",
+        createdAt: new Date().toISOString()
+      });
+
+      // Log activity in MySQL
+      try {
+        await pool.query(`
+          INSERT INTO activity_logs (uid, feature, action, details)
+          VALUES (?, ?, ?, ?)
+        `, [uid, "BrowserExtension", "clipped_content", JSON.stringify({ url, title })]);
+      } catch (mysqlErr) {
+        console.error("Extension MySQL logging failed:", mysqlErr);
+      }
+
+      res.json({ success: true, id: docRef.id });
+    } catch (error: any) {
+      console.error("Extension Save Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // --- Cortex Studio AI Routes ---
 
   // Agents CRUD
@@ -1514,6 +1587,91 @@ Goal: Act like a combination of ChatGPT + Google + Research Assistant + Expert C
   setInterval(syncUserStatuses, 30000);
   // Initial sync after a short delay
   setTimeout(syncUserStatuses, 10000);
+
+  // --- Automation: Daily Study Reminders ---
+  cron.schedule('0 8 * * *', async () => {
+    console.log("[Automation] Running daily study reminders...");
+    if (!db) return;
+
+    try {
+      const usersSnap = await db.collection("users").where("email", "!=", "").get();
+      
+      for (const doc of usersSnap.docs) {
+        const user = doc.data();
+        if (!user.email) continue;
+
+        // Fetch upcoming tasks for this user
+        const tasksSnap = await db.collection("tasks")
+          .where("uid", "==", doc.id)
+          .where("completed", "==", false)
+          .limit(3)
+          .get();
+
+        if (tasksSnap.empty) continue;
+
+        const taskList = tasksSnap.docs.map(t => `- ${t.data().title}`).join("\n");
+
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: "📚 Your Daily Study Motivation - AI Student",
+          text: `Hi ${user.displayName || 'Student'},\n\nHere are your top tasks for today:\n\n${taskList}\n\nLog in now to get started: http://localhost:5173/dashboard\n\nHappy Learning!`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; color: #334155;">
+              <h2 style="color: #2563eb;">Good Morning, ${user.displayName || 'Student'}! ☀️</h2>
+              <p>Ready to crush your study goals today? Here's what's on your list:</p>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 10px; margin: 20px 0;">
+                ${taskList.replace(/\n/g, '<br>')}
+              </div>
+              <a href="http://localhost:5173/dashboard" style="background: #2563eb; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Start Studying</a>
+            </div>
+          `
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) console.error(`[Automation] Email failed for ${user.email}:`, error);
+          else console.log(`[Automation] Email sent to ${user.email}`);
+        });
+      }
+    } catch (err) {
+      console.error("[Automation] Reminder error:", err);
+    }
+  });
+
+  // --- Exam Prep API ---
+  app.post("/api/planner/exam-prep", async (req, res) => {
+    const { topic, examDate, uid } = req.body;
+    if (!topic || !examDate) return res.status(400).json({ error: "Topic and Exam Date required" });
+
+    try {
+      const genAI = getGemini();
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      
+      const prompt = `Create a 7-day emergency crash course study plan for the subject/topic: "${topic}". 
+      The exam is on ${examDate}. 
+      Divide each day into 3 sessions (Morning, Afternoon, Evening). 
+      Focus on high-yield topics and active recall.
+      Format as a structured list.`;
+
+      const result = await model.generateContent(prompt);
+      const plan = result.response.text();
+
+      // Save as a special note/plan in Firestore
+      if (db && uid) {
+        await db.collection("notes").add({
+          uid,
+          title: `Exam Prep: ${topic}`,
+          content: plan,
+          type: "exam_prep",
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      res.json({ plan });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);

@@ -24,6 +24,7 @@ export const bn = {
   sign_out: "সাইন আউট",
   neurotest_ai: "নিউরোটেস্ট এআই",
   digital_notes: "ডিজিটাল নোটস",
+  knowledge_base: "মাল্টি-পিডিএফ নলেজ বেস",
   
   // Dashboard
   welcome_back: "স্বাগতম",
@@ -59,6 +60,7 @@ export const bn = {
   desc_smart_resources: "আপনার স্টাডি টপিকের ওপর ভিত্তি করে সেরা রিসার্চ পেপার, বই এবং ভিডিওর পরামর্শ পান।",
   desc_cortex_studio: "মেমোরি এবং টুলস সহ আপনার ব্যক্তিগত এআই এজেন্ট তৈরি এবং অটোমেট করুন।",
   desc_digital_notes: "ছবি থেকে টেক্সট বের করুন, সারাংশ এবং কীওয়ার্ড পান একদম ফ্রিতে।",
+  desc_knowledge_base: "একসাথে অনেকগুলো ডকুমেন্ট থেকে তথ্য খুঁজুন এবং চ্যাট করুন।",
   
   // Auth/Denied
   access_denied: "প্রবেশাধিকার নেই",

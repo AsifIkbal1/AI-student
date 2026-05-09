@@ -25,6 +25,7 @@ import { AIQuiz } from "./components/AIQuiz";
 import { DigitalNotes } from "./components/DigitalNotes";
 import { CortexStudio } from "./components/CortexStudio/CortexStudio";
 import { AdminDashboard } from "./components/AdminDashboard";
+import { KnowledgeBase } from "./components/KnowledgeBase";
 
 import { AIEssayWriter } from "./components/AIEssayWriter";
 import { AIStudyPlanner } from "./components/AIStudyPlanner";
@@ -168,6 +169,7 @@ const App: React.FC = () => {
                 <Route path="/neurotest-ai" element={<ProtectedRoute requireAccess={false}><NeuroTest /></ProtectedRoute>} />
                 <Route path="/digital-notes" element={<ProtectedRoute><DigitalNotes /></ProtectedRoute>} />
                 <Route path="/cortex-studio" element={<ProtectedRoute><CortexStudio /></ProtectedRoute>} />
+                <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
                 <Route path="/zenpath" element={<ProtectedRoute><ZenPathAI /></ProtectedRoute>} />
                 <Route path="/tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
                 {/* Placeholder routes for other features */}

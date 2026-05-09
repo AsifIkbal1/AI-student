@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { width: 300px; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; }
+    .header { display: flex; items-center: center; gap: 10px; margin-bottom: 15px; }
+    .logo { width: 30px; height: 30px; background: #2563eb; border-radius: 8px; }
+    h2 { font-size: 16px; margin: 0; color: #1e293b; }
+    .content-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 15px; }
+    .title { font-weight: bold; font-size: 13px; color: #334155; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .url { font-size: 11px; color: #94a3b8; word-break: break-all; }
+    button { width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    .status { font-size: 12px; text-align: center; margin-top: 10px; color: #64748b; }
+    .settings { margin-top: 15px; border-top: 1px solid #e2e8f0; pt-10px; }
+    input { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"></div>
+    <h2>AI Student Clipper</h2>
+  </div>
+  
+  <div class="content-box">
+    <div id="pageTitle" class="title">Loading page info...</div>
+    <div id="pageUrl" class="url"></div>
+  </div>
+
+  <button id="clipBtn">Clip to Dashboard</button>
+  <div id="status" class="status"></div>
+
+  <div class="settings">
+    <label style="font-size: 11px; font-weight: bold;">User UID (from Dashboard Profile)</label>
+    <input type="text" id="uidInput" placeholder="Paste your UID here">
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -79,7 +79,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode, requireAccess?: bool
   }
 
   if (requireAccess && profile) {
-    const hasAccess = profile.role === "admin" || profile.isApproved || (profile.subscription?.plan !== "free" && profile.subscription?.active);
+    const hasAccess = profile.role === "admin" || profile.isApproved || profile.subscription?.active;
     if (!hasAccess) {
       return <Navigate to="/access" />;
     }

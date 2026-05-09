@@ -62,8 +62,7 @@ export const Analytics: React.FC = () => {
     { key: "aim-trainer", label: "Precision" },
     { key: "number-memory", label: "Logic" },
     { key: "verbal-memory", label: "Verbal" },
-    { key: "visual-memory", label: "Visual" },
-    { key: "typing-speed", label: "Motor" }
+    { key: "visual-memory", label: "Visual" }
   ];
 
   const radarData = testTypes.map(type => {

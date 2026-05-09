@@ -1,22 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Cpu, 
-  Plus, 
-  MessageSquare, 
-  Calendar, 
-  Settings, 
-  Trash2, 
-  Play, 
-  Brain,
-  Wand2,
-  ChevronRight,
-  Bot,
-  Activity,
-  History,
-  Clock,
-  ExternalLink,
-  Sparkles
-} from "lucide-react";
+import { Cpu, Plus, MessageSquare, Calendar, Settings, Trash2, Play, Brain, Wand2, ChevronRight, Bot, Activity, History, Clock, ExternalLink, Sparkles } from "lucide-react";
+import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../AuthContext";
 import { useTheme } from "../ThemeContext";
@@ -31,6 +15,9 @@ type Tab = "dashboard" | "studio" | "chat" | "automation" | "settings" | "use-ca
 
 export const CortexStudio: React.FC = () => {
   const { profile } = useAuth();
+  if (profile && profile.subscription?.plan !== "premium" && profile.role !== "admin") {
+    return <Navigate to="/subscription" />;
+  }
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");

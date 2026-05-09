@@ -14,7 +14,7 @@ export const AccessPage: React.FC = () => {
   const { t } = useLanguage();
   
   // If the user already has access, redirect them to the dashboard
-  const hasAccess = profile?.role === "admin" || profile?.isApproved || (profile?.subscription?.plan !== "free" && profile?.subscription?.active);
+  const hasAccess = profile?.role === "admin" || profile?.isApproved || profile?.subscription?.active;
   if (hasAccess) {
     return <Navigate to="/dashboard" />;
   }

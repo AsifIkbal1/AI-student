@@ -7,7 +7,6 @@ import {
   BarChart3, 
   Zap, 
   Target, 
-  Keyboard, 
   Layers, 
   Hash, 
   Type, 
@@ -56,13 +55,6 @@ const tests = [
     description: "Remember the squares on a grid.",
     icon: <Eye size={32} />,
     color: "purple"
-  },
-  {
-    id: "typing-speed",
-    title: "Typing Speed",
-    description: "Test your WPM and accuracy.",
-    icon: <Keyboard size={32} />,
-    color: "sky"
   }
 ];
 

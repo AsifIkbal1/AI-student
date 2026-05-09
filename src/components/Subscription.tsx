@@ -13,19 +13,6 @@ export const Subscription: React.FC = () => {
 
   const plans = [
     {
-      title: "Free",
-      id: "free",
-      prices: { month: "0", year: "0" },
-      icon: Zap,
-      color: "bg-gray-400",
-      features: [
-        "Refer & Earn Program",
-        "NeuroTest AI Access",
-        "Basic AI Support"
-      ],
-      current: profile?.subscription?.plan === "free" || !profile?.subscription?.plan
-    },
-    {
       title: "Pro",
       id: "pro",
       prices: { month: PLANS.pro.monthly_bdt, year: PLANS.pro.yearly_bdt },
@@ -33,12 +20,13 @@ export const Subscription: React.FC = () => {
       icon: Star,
       color: "bg-blue-600",
       features: [
-        "Everything in Free",
         "AI Tutor (Unlimited)",
         "Smart Notes & Flashcards",
         "AI Quiz Generator",
         "Standard Academic Tools",
-        "5,000 Credits/Month"
+        "5,000 Credits/Month",
+        "Refer & Earn Program",
+        "NeuroTest AI Access"
       ],
       current: profile?.subscription?.plan === "pro"
     },
@@ -51,13 +39,13 @@ export const Subscription: React.FC = () => {
       color: "bg-purple-600",
       popular: true,
       features: [
-        "Everything in Pro",
         "Cortex Studio AI Agent Builder",
         "AI Slide Generator",
         "AI Diagram Generator",
         "Doubt Solver (Vision AI)",
         "15,000 Credits/Month",
-        "24/7 Priority Support"
+        "24/7 Priority Support",
+        "Advanced Analytics"
       ],
       current: profile?.subscription?.plan === "premium"
     }
@@ -95,7 +83,7 @@ export const Subscription: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan) => (
           <PlanCard 
             key={plan.title} 

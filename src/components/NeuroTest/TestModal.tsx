@@ -10,7 +10,6 @@ import { SequenceMemory } from "./tests/SequenceMemory";
 import { NumberMemory } from "./tests/NumberMemory";
 import { VerbalMemory } from "./tests/VerbalMemory";
 import { VisualMemory } from "./tests/VisualMemory";
-import { TypingSpeed } from "./tests/TypingSpeed";
 
 interface TestModalProps {
   isOpen: boolean;
@@ -28,7 +27,6 @@ export const TestModal: React.FC<TestModalProps> = ({ isOpen, testId, onClose })
       case "number-memory": return <NumberMemory onComplete={onClose} />;
       case "verbal-memory": return <VerbalMemory onComplete={onClose} />;
       case "visual-memory": return <VisualMemory onComplete={onClose} />;
-      case "typing-speed": return <TypingSpeed onComplete={onClose} />;
       default: return null;
     }
   };

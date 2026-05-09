@@ -199,7 +199,8 @@ export const Dashboard: React.FC = () => {
       path: "/doubt-solver",
       color: "from-red-500 to-red-600",
       category: "Tools",
-      badge: "Popular" as const
+      badge: "Popular" as const,
+      premiumOnly: true
     },
     {
       icon: Code,
@@ -216,9 +217,9 @@ export const Dashboard: React.FC = () => {
       path: "/slides",
       color: "from-amber-500 to-amber-600",
       category: "Creation",
-      badge: "New" as const
+      badge: "New" as const,
+      premiumOnly: true
     },
-
     {
       icon: Sparkles,
       title: t("smart_study"),
@@ -258,7 +259,8 @@ export const Dashboard: React.FC = () => {
       description: t("desc_diagrams"),
       path: "/diagrams",
       color: "from-violet-500 to-violet-600",
-      category: "Creation"
+      category: "Creation",
+      premiumOnly: true
     },
     {
       icon: Library,
@@ -275,7 +277,8 @@ export const Dashboard: React.FC = () => {
       path: "/cortex-studio",
       color: "from-indigo-600 to-violet-700",
       category: "Tools",
-      badge: "New" as const
+      badge: "New" as const,
+      premiumOnly: true
     },
     {
       icon: FileText,
@@ -363,7 +366,12 @@ export const Dashboard: React.FC = () => {
           <AnimatePresence>
             {filteredFeatures.length > 0 ? (
               filteredFeatures.map((feature) => (
-                <FeatureCard key={feature.title} {...feature} theme={theme} isLocked={feature.title === t("cortex_studio") && profile?.subscription?.plan !== "premium" && profile?.role !== "admin"} />
+                <FeatureCard 
+                  key={feature.title} 
+                  {...feature} 
+                  theme={theme} 
+                  isLocked={feature.premiumOnly && profile?.subscription?.plan !== "premium" && profile?.role !== "admin"} 
+                />
               ))
             ) : (
               <div className="col-span-full py-20 text-center">

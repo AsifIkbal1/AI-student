@@ -6,9 +6,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "./AuthContext";
+import { Navigate } from "react-router-dom";
 
 export const AISlideGenerator: React.FC = () => {
   const { profile, deductCredits } = useAuth();
+  if (profile && profile.subscription?.plan !== "premium" && profile.role !== "admin") {
+    return <Navigate to="/subscription" />;
+  }
   const [topic, setTopic] = useState("");
   const [slideCount, setSlideCount] = useState(5);
   const [slides, setSlides] = useState<string[]>([]);

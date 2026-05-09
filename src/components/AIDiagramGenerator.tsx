@@ -18,6 +18,7 @@ import {
 import { generateDiagramCode, logUsage, handleAIError } from "../lib/ai";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "./AuthContext";
+import { Navigate } from "react-router-dom";
 import { useTheme } from "./ThemeContext";
 import { cn } from "../lib/utils";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -79,6 +80,9 @@ const MermaidPreview: React.FC<{ chart: string; id: string; theme: string }> = (
 
 export const AIDiagramGenerator: React.FC = () => {
   const { profile, deductCredits } = useAuth();
+  if (profile && profile.subscription?.plan !== "premium" && profile.role !== "admin") {
+    return <Navigate to="/subscription" />;
+  }
   const { theme } = useTheme();
   
   const [activeTab, setActiveTab] = useState<"text" | "pdf" | "notes">("text");

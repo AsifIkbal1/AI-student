@@ -4,9 +4,13 @@ import { solveDoubt, logUsage, handleAIError } from "../lib/ai";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
 import { useAuth } from "./AuthContext";
+import { Navigate } from "react-router-dom";
 
 export const AIDoubtSolver: React.FC = () => {
   const { profile, deductCredits } = useAuth();
+  if (profile && profile.subscription?.plan !== "premium" && profile.role !== "admin") {
+    return <Navigate to="/subscription" />;
+  }
   const [image, setImage] = useState<string | null>(null);
   const [solution, setSolution] = useState("");
   const [loading, setLoading] = useState(false);

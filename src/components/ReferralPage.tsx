@@ -62,7 +62,7 @@ export const ReferralPage: React.FC = () => {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Refer & Earn</h1>
         </div>
-        <p className="text-gray-500 dark:text-gray-400">Invite your friends and earn Free Premium Days when they upgrade.</p>
+        <p className="text-gray-500 dark:text-gray-400">Invite your friends and earn Premium Days when they upgrade.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -97,7 +97,7 @@ export const ReferralPage: React.FC = () => {
           <h2 className="text-2xl md:text-3xl font-bold mb-4">Share Your Unique Link</h2>
           <p className="text-blue-100 mb-8">
             When a friend signs up using your link and purchases a premium plan, you both get a reward! 
-            You will automatically earn 7 extra days of Premium subscription for free.
+            You will automatically earn 7 extra days of Premium subscription.
           </p>
 
           <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-md border border-white/20 flex flex-col md:flex-row items-center gap-2">

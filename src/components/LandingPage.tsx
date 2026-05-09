@@ -61,7 +61,7 @@ export const LandingPage: React.FC = () => {
           
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-14 leading-relaxed font-medium">
             The all-in-one academic command center. Solve problems, generate notes, 
-            and accelerate your learning with state-of-the-art artificial intelligence.
+            and accelerate your learning with professional AI tools.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-24">
@@ -69,7 +69,7 @@ export const LandingPage: React.FC = () => {
               onClick={login}
               className="group shimmer-effect bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-12 py-6 rounded-3xl font-bold text-xl hover:shadow-2xl hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-3 transform hover:-translate-y-1 active:scale-95"
             >
-              Start Learning Free 
+              Get Started Now
               <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
             </button>
             <button 

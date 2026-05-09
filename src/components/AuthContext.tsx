@@ -73,7 +73,7 @@ interface UserProfile {
   role: "user" | "admin";
   credits: number;
   subscription: {
-    plan: "free" | "pro" | "premium";
+    plan: "pro" | "premium";
     expiresAt: string;
     active: boolean;
   };
@@ -140,9 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: user.email === "mdasifikbal2050@gmail.com" ? "admin" : "user",
               credits: 1000,
               subscription: {
-                plan: "free",
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                active: true,
+                plan: "pro",
+                expiresAt: new Date().toISOString(),
+                active: false,
               },
               isBlocked: false,
               isApproved: false,

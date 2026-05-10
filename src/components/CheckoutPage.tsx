@@ -67,6 +67,35 @@ const MFS_OPTIONS = [
   }
 ];
 
+const MastercardLogo = () => (
+  <svg viewBox="0 0 100 100" className="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="20" fill="#252a31" />
+    <g transform="translate(15, 25) scale(0.7)">
+      <circle cx="35" cy="35" r="30" fill="#EB001B" />
+      <circle cx="65" cy="35" r="30" fill="#F79E1B" fillOpacity="0.8" />
+    </g>
+  </svg>
+);
+
+const UCBLogo = () => (
+  <svg viewBox="0 0 300 100" className="w-24 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* UCB Text */}
+    <text x="0" y="65" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="60" fill="#000000">UCB</text>
+    
+    {/* Stylized Shape */}
+    <g transform="translate(150, 10) scale(0.8)">
+      {/* Red part */}
+      <path d="M40,0 L80,40 L40,80 L0,40 Z" fill="#EB001B" transform="rotate(45, 40, 40)" />
+      <circle cx="65" cy="25" r="25" fill="#EB001B" />
+      {/* Grey part */}
+      <circle cx="25" cy="65" r="25" fill="#9CA3AF" />
+    </g>
+    
+    {/* Subtext */}
+    <text x="0" y="95" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="12" fill="#000000" letterSpacing="1">UNITED COMMERCIAL BANK PLC</text>
+  </svg>
+);
+
 export const CheckoutPage: React.FC = () => {
   const { planId, interval } = useParams<{ planId: string; interval: "month" | "year" }>();
   const navigate = useNavigate();
@@ -219,28 +248,53 @@ export const CheckoutPage: React.FC = () => {
             {/* International Payment Option */}
             <div className="mb-8">
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">International Cards</p>
-              <button
-                onClick={() => setSelectedMethod("stripe")}
-                className={cn(
-                  "w-full flex items-center p-6 rounded-2xl border-2 transition-all duration-300",
-                  selectedMethod === "stripe" ? "border-blue-600 bg-blue-50/50 shadow-md" : "border-gray-100 hover:border-gray-200",
-                  selectedMethod && selectedMethod !== "stripe" ? "opacity-40 grayscale" : "opacity-100"
-                )}
-              >
-                <div className={cn(
-                  "p-3 rounded-xl mr-4",
-                  selectedMethod === "stripe" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"
-                )}>
-                  <Globe size={32} />
-                </div>
-                <div className="text-left flex-1">
-                  <p className={cn(
-                    "font-bold text-lg",
-                    selectedMethod === "stripe" ? "text-blue-700" : "text-gray-700"
-                  )}>Credit / Debit Card</p>
-                  <p className="text-sm text-gray-500">Stripe: Visa, MasterCard, Apple Pay</p>
-                </div>
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setSelectedMethod("stripe")}
+                  className={cn(
+                    "w-full flex items-center p-6 rounded-2xl border-2 transition-all duration-300",
+                    selectedMethod === "stripe" ? "border-blue-600 bg-blue-50/50 shadow-md" : "border-gray-100 hover:border-gray-200",
+                    selectedMethod && selectedMethod !== "stripe" ? "opacity-40 grayscale" : "opacity-100"
+                  )}
+                >
+                  <div className={cn(
+                    "p-3 rounded-xl mr-4",
+                    selectedMethod === "stripe" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"
+                  )}>
+                    <Globe size={32} />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className={cn(
+                      "font-bold text-lg",
+                      selectedMethod === "stripe" ? "text-blue-700" : "text-gray-700"
+                    )}>Credit / Debit Card</p>
+                    <p className="text-sm text-gray-500">Stripe: Visa, MasterCard, Apple Pay</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setSelectedMethod("mastercard")}
+                  className={cn(
+                    "w-full flex items-center p-6 rounded-2xl border-2 transition-all duration-300",
+                    selectedMethod === "mastercard" ? "border-blue-600 bg-blue-50/50 shadow-md" : "border-gray-100 hover:border-gray-200",
+                    selectedMethod && selectedMethod !== "mastercard" ? "opacity-40 grayscale" : "opacity-100"
+                  )}
+                >
+                  <div className="mr-4 flex flex-col items-center gap-1">
+                    <MastercardLogo />
+                    <div className="scale-50 h-4">
+                      <UCBLogo />
+                    </div>
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className={cn(
+                      "font-bold text-lg",
+                      selectedMethod === "mastercard" ? "text-blue-700" : "text-gray-700"
+                    )}>UCB Mastercard</p>
+                    <p className="text-sm text-gray-500">United Commercial Bank (Manual)</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Summary & Checkout */}
@@ -287,16 +341,25 @@ export const CheckoutPage: React.FC = () => {
       {/* Manual Payment Modal */}
       {showManualPayment && selectedMethod && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in zoom-in-95 duration-200 scrollbar-hide">
             {/* Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {(() => {
                   const mfs = MFS_OPTIONS.find(m => m.id === selectedMethod);
-                  const Logo = mfs?.logo;
-                  return Logo ? <div className="scale-75 origin-left"><Logo /></div> : null;
+                  const Logo = mfs?.logo || (selectedMethod === "mastercard" ? MastercardLogo : null);
+                  return Logo ? (
+                    <div className="flex items-center gap-2">
+                      <div className="scale-75 origin-left"><Logo /></div>
+                      {selectedMethod === "mastercard" && (
+                        <div className="scale-75 origin-left opacity-80"><UCBLogo /></div>
+                      )}
+                    </div>
+                  ) : null;
                 })()}
-                <h3 className="text-xl font-bold text-gray-900 capitalize">{selectedMethod} Payment</h3>
+                <h3 className="text-xl font-bold text-gray-900 capitalize">
+                  {selectedMethod === "mastercard" ? "UCB Mastercard" : `${selectedMethod} Payment`}
+                </h3>
               </div>
               <button 
                 onClick={() => setShowManualPayment(false)}
@@ -309,24 +372,78 @@ export const CheckoutPage: React.FC = () => {
             {/* Body */}
             <div className="p-8 text-center">
               <div className="mb-6 space-y-2">
-                <p className="text-gray-700 font-medium">To get the subscription, please send money to this number:</p>
-                <p className="text-gray-600 text-sm">সাবস্ক্রিপশন পেতে এই নম্বরে সেন্ড মানি করুন:</p>
+                <p className="text-gray-700 font-medium">
+                  {selectedMethod === "mastercard" 
+                    ? "To get the subscription, please pay to this card:"
+                    : "To get the subscription, please send money to this number:"}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  {selectedMethod === "mastercard"
+                    ? "সাবস্ক্রিপশন পেতে এই কার্ডে পেমেন্ট করুন:"
+                    : "সাবস্ক্রিপশন পেতে এই নম্বরে সেন্ড মানি করুন:"}
+                </p>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 mb-8">
-                <span className="text-3xl font-black text-blue-900 tracking-wider">+8801786961727</span>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText("+8801786961727");
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-white px-4 py-2 rounded-xl shadow-sm border border-blue-100 transition-all"
-                >
-                  {copied ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                  {copied ? "Copied!" : "Copy Number"}
-                </button>
-              </div>
+              {selectedMethod === "mastercard" ? (
+                <div className="space-y-4 mb-8">
+                  <div className="bg-[#252a31] border border-gray-800 rounded-3xl p-8 text-left relative overflow-hidden shadow-2xl">
+                    {/* Card Background Decoration */}
+                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+                    <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+                    
+                    <div className="flex justify-between items-start mb-12">
+                      <div className="bg-white/90 px-3 py-1.5 rounded-lg">
+                        <UCBLogo />
+                      </div>
+                      <MastercardLogo />
+                    </div>
+
+                    <div className="mb-8">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-2 opacity-60">Card Number</p>
+                      <div className="flex items-center justify-between group">
+                        <span className="text-2xl md:text-3xl font-medium text-white tracking-[0.1em] font-mono whitespace-nowrap">5262 3830 9631 7039</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText("5262383096317039");
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                        >
+                          {copied ? <CheckCircle2 size={20} className="text-emerald-400" /> : <Copy size={20} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-1 opacity-60">Card Holder</p>
+                        <p className="text-lg font-medium text-white tracking-wide">MD ASIF IKBAL</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-1 opacity-60">Bank</p>
+                        <p className="text-sm font-bold text-blue-400">United Commercial Bank</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 font-medium">Please ensure the exact amount is paid. Use the Transaction ID from your bank statement.</p>
+                </div>
+              ) : (
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 mb-8">
+                  <span className="text-3xl font-black text-blue-900 tracking-wider">+8801786961727</span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText("+8801786961727");
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-white px-4 py-2 rounded-xl shadow-sm border border-blue-100 transition-all"
+                  >
+                    {copied ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                    {copied ? "Copied!" : "Copy Number"}
+                  </button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6 text-left">
                 <div>

@@ -161,3 +161,12 @@
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
+/* Scrollbar Utilities */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

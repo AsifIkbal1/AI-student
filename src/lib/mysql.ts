@@ -6,9 +6,9 @@ const dbName = process.env.DB_NAME || 'paid_system_db';
 
 let pool: any = null;
 
-function createMySqlPool(user: string, password: string) {
+function createMySqlPool(host: string, user: string, password: string) {
   return mysql.createPool({
-    host: 'localhost',
+    host: host,
     user: user,
     password: password,
     database: dbName,
@@ -19,22 +19,22 @@ function createMySqlPool(user: string, password: string) {
 }
 
 export async function initMySQL() {
-  // FORCE LOCAL ROOT FOR NOW TO SOLVE THE ERROR
-  let user = 'root';
-  let password = '';
+  const user = process.env.DB_USER || 'root';
+  const password = process.env.DB_PASSWORD || '';
+  const host = process.env.DB_HOST || 'localhost';
   let connection;
 
-  console.log("🛠️ FORCING LOCAL ROOT CONNECTION...");
+  console.log(`🛠️ CONNECTING TO DATABASE AS: ${user}...`);
 
   try {
     connection = await mysql.createConnection({
-      host: 'localhost',
+      host: host,
       user: user,
       password: password,
     });
-    console.log("✅ MySQL connected using local root.");
+    console.log(`✅ MySQL connected using ${user}.`);
   } catch (err: any) {
-    console.error("❌ MySQL Connection failed even with root:", err.message);
+    console.error(`❌ MySQL Connection failed for ${user}:`, err.message);
     return;
   }
 
@@ -43,7 +43,7 @@ export async function initMySQL() {
     await connection.end();
   }
 
-  pool = createMySqlPool(user, password);
+  pool = createMySqlPool(host, user, password);
   
   try {
     const conn = await pool.getConnection();

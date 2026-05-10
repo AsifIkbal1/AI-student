@@ -450,7 +450,17 @@ export const CheckoutPage: React.FC = () => {
                   <p className="text-sm text-gray-500 font-bold mb-1">Amount to Send</p>
                   <p className="text-xs text-gray-400">Total amount for {interval}ly plan</p>
                 </div>
-                <div className="text-2xl font-black text-gray-900">৳{bdtPrice}</div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-gray-900">
+                    ৳{bdtPrice}
+                    {selectedMethod === "mastercard" && (
+                      <span className="text-sm text-gray-400 ml-2 font-bold">/ ${price}</span>
+                    )}
+                  </div>
+                  {selectedMethod === "mastercard" && (
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Approx. International Value</p>
+                  )}
+                </div>
               </div>
 
               {paymentSubmitted ? (
